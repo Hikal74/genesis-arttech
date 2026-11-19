@@ -65,7 +65,7 @@ let ready: Promise<void> | null = null;
 
 function pg() {
   if (!sql) {
-    sql = postgres(process.env.DATABASE_URL!, { max: 3, idle_timeout: 20, prepare: false });
+    sql = postgres(process.env.DATABASE_URL!, { max: 3, idle_timeout: 20, prepare: false, onnotice: () => {} });
   }
   ready ??= sql`
     CREATE TABLE IF NOT EXISTS felt_entries (
