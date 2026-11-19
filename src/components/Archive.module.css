@@ -1,0 +1,32 @@
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s-3); padding: var(--s-4) 0 var(--s-6); border-top: 1px solid var(--line); position: sticky; top: 68px; z-index: 10; background: var(--ink-0); }
+.search { flex: 1 1 280px; }
+.dates { display: flex; gap: var(--s-2); }
+.dates label { display: grid; gap: 4px; }
+.dates input { width: 158px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(16px, 2.4vw, 32px); }
+.month { margin-bottom: var(--s-8); display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--s-5); align-items: start; }
+.month .monthTitle { position: sticky; top: 160px; flex-direction: column; gap: 4px; }
+.monthTitle { display: flex; align-items: baseline; gap: var(--s-3); margin: 0 0 var(--s-5); font-family: var(--font-display); font-weight: 400; font-size: var(--t-2); }
+.monthTitle span { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--paper-dim); }
+.ghost { aspect-ratio: 3 / 4.2; border-radius: 2px; }
+.dim { opacity: 0.55; transition: opacity var(--d-fast); }
+.empty { padding: var(--s-9) 0; display: grid; gap: var(--s-4); justify-items: start; }
+.empty h2 { font-size: var(--t-2); }
+.nudge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-5); border: 1px solid var(--line); margin-top: var(--s-6); }
+.nudge p { margin: 0; color: var(--paper-2); max-width: 60ch; }
+.key { margin-top: var(--s-9); padding-top: var(--s-5); border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: var(--s-4) var(--s-7); }
+.key form { grid-column: 2; }
+.keyText { margin: var(--s-2) 0 0; font-size: var(--t-small); color: var(--paper-dim); max-width: 50ch; }
+.keyActions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.keyActions input { flex: 1 1 220px; }
+.code { font-family: var(--font-mono); font-size: 0.8rem; padding: 10px 12px; background: var(--ink-1); border: 1px solid var(--line); overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .controls { position: static; }
+  .dates { width: 100%; }
+  .dates label { flex: 1; }
+  .dates input { width: 100%; }
+  .key { grid-template-columns: 1fr; }
+  .month { grid-template-columns: 1fr; }
+  .month .monthTitle { position: static; flex-direction: row; }
+  .key form { grid-column: 1; }
+}

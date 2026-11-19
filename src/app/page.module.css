@@ -1,0 +1,43 @@
+.hero { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: clamp(32px, 5vw, 80px); align-items: center; min-height: calc(100svh - 68px); padding-top: var(--s-6); padding-bottom: var(--s-8); }
+.heroText { display: grid; gap: var(--s-5); align-content: center; }
+.heroTitle { font-size: clamp(3.4rem, 8vw, 8.4rem); }
+.heroTitle em { color: var(--safelight); }
+.ctas { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+.heroDemo { min-width: 0; }
+
+.h2 { font-size: var(--t-1); }
+.h2 em { color: var(--paper-dim); }
+.num { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--safelight); }
+
+.inputs { padding-top: var(--s-9); }
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-6); margin-top: var(--s-7); }
+.cols article { border-top: 1px solid var(--line-strong); padding-top: var(--s-4); }
+.cols h3, .treatList h3, .principles h3 { font-family: var(--font-display); font-weight: 400; font-size: var(--t-3); margin: var(--s-3) 0 var(--s-3); line-height: 1.1; }
+.cols p, .treatList p, .principles p { margin: 0; color: var(--paper-dim); font-size: 0.98rem; }
+
+.treatments { padding-top: var(--s-10); display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--s-7); }
+.treatHead { display: grid; gap: var(--s-4); align-content: start; position: sticky; top: 100px; }
+.treatHead p.muted { margin: 0; max-width: 46ch; }
+.treatList { list-style: none; margin: 0; padding: 0; }
+.treatList li { display: grid; grid-template-columns: 48px 220px 1fr; gap: var(--s-4); align-items: baseline; padding: var(--s-5) 0; border-top: 1px solid var(--line); }
+.treatList h3 { margin: 0; }
+
+.archive { padding-top: var(--s-10); }
+.archiveHead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--s-4); margin-bottom: var(--s-6); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2.4vw, 32px); }
+
+.principles { padding-top: var(--s-10); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-6); }
+.principles > div { border-top: 1px solid var(--line); padding-top: var(--s-4); }
+
+@media (max-width: 1020px) {
+  .hero { grid-template-columns: 1fr; min-height: 0; }
+  .treatments { grid-template-columns: 1fr; }
+  .treatHead { position: static; }
+  .principles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .cols, .cards { grid-template-columns: 1fr; }
+  .treatList li { grid-template-columns: 36px 1fr; }
+  .treatList p { grid-column: 2; }
+  .principles { grid-template-columns: 1fr; }
+}

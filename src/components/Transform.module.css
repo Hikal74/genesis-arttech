@@ -1,0 +1,49 @@
+.shell { position: relative; min-height: 520px; }
+.scene { display: grid; grid-template-columns: minmax(0, 0.9fr) 80px minmax(0, 1.25fr); align-items: center; gap: var(--s-4); animation: sceneIn 900ms var(--ease-out); }
+@keyframes sceneIn { from { opacity: 0; } }
+
+.inputs { display: grid; gap: var(--s-3); }
+.input { background: var(--ink-1); border: 1px solid var(--line); padding: var(--s-4); animation: slip 800ms var(--ease-out) both; }
+.input:nth-child(2) { animation-delay: 150ms; }
+.input:nth-child(3) { animation-delay: 300ms; }
+@keyframes slip { from { opacity: 0; transform: translateX(-16px); } }
+.note p { margin: 8px 0 0; font-family: var(--font-display); font-size: 1.12rem; line-height: 1.35; color: var(--paper-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.prints { position: relative; height: 128px; }
+.prints img { position: absolute; top: 14px; left: calc(16px + var(--k) * 62px); width: 96px; height: 76px; object-fit: cover; border: 4px solid #f3efe6; transform: rotate(calc((var(--k) - 1) * 5deg)); box-shadow: 0 8px 20px -8px #000; }
+.prints .meta { position: absolute; left: var(--s-4); bottom: 10px; }
+.song { display: flex; gap: var(--s-4); align-items: center; }
+.song > div { flex: 1; display: grid; gap: 6px; }
+.beat { width: 14px; height: 14px; border-radius: 50%; background: var(--safelight); animation: thump infinite var(--ease-out); flex: none; }
+@keyframes thump { 0% { transform: scale(1.5); box-shadow: 0 0 18px var(--safelight); } 50%, 100% { transform: scale(1); box-shadow: none; } }
+
+.arrow { display: grid; justify-items: center; gap: 8px; }
+.arrow span { width: 1px; height: 120px; background: linear-gradient(transparent, var(--safelight), transparent); }
+.arrow em { font-family: var(--font-display); color: var(--paper-dim); font-size: 0.95rem; white-space: nowrap; writing-mode: vertical-rl; transform: rotate(180deg); }
+
+.output { position: relative; display: block; aspect-ratio: 4 / 4.6; overflow: hidden; isolation: isolate; box-shadow: 0 40px 80px -40px #000; animation: develop 1.8s var(--ease-out) 300ms both; }
+@keyframes develop { from { opacity: 0; filter: brightness(0.1) blur(10px); } to { opacity: 1; filter: none; } }
+.outField { position: absolute; inset: 0; z-index: 1; }
+.outPhoto { position: absolute; z-index: 0; object-fit: cover; filter: var(--m-filter); }
+.outPhoto.film { inset: 10% 12% 38%; width: 76%; height: 52%; border: 10px solid #111; border-left-width: 22px; border-right-width: 22px; }
+.outPhoto.editorial { top: 0; right: 0; width: 62%; height: 70%; }
+.outPhoto.collage { top: 8%; left: 14%; width: 66%; height: 50%; border: 8px solid #fff; transform: rotate(-4deg); box-shadow: 10px 12px 0 var(--m-accent2); }
+.outPhoto.minimal { top: 14%; left: 30%; width: 40%; height: 40%; }
+.outPhoto.abstract { top: 6%; left: 24%; width: 70%; height: 60%; filter: grayscale(1) contrast(1.3) brightness(0.8); }
+.outText { position: absolute; z-index: 2; left: 7%; right: 7%; bottom: 8%; }
+.outText h3 { margin: 6px 0 0; overflow-wrap: anywhere; }
+.outText p { margin: 10px 0 0; font-family: var(--font-display); font-style: italic; color: var(--m-muted); font-size: 1.05rem; }
+.outMeta { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-muted); }
+.outSwatches { position: absolute; z-index: 2; top: 16px; left: 16px; display: flex; gap: 3px; }
+.outSwatches i { width: 12px; height: 12px; border-radius: 50%; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
+.tabs button { text-align: left; padding: 10px 14px; border: 1px solid var(--line); font-size: 0.9rem; color: var(--paper-dim); transition: border-color var(--d-fast), color var(--d-fast); }
+.tabs button[aria-selected="true"] { border-color: var(--paper); color: var(--paper); }
+.tabNo { font-family: var(--font-mono); font-size: 0.66rem; color: var(--safelight); margin-right: 6px; }
+
+@media (max-width: 860px) {
+  .scene { grid-template-columns: 1fr; }
+  .arrow span { height: 36px; }
+  .arrow em { writing-mode: horizontal-tb; transform: none; }
+  .output { aspect-ratio: 4 / 4.4; }
+}
