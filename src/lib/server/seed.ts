@@ -5,7 +5,7 @@ import jpeg from "jpeg-js";
 import { analyzePixels, downsample } from "../analysis/image";
 import { analyzeSamples, parseWav } from "../analysis/audio";
 import { DEMO_DAYS } from "../demo";
-import type { PhotoInput } from "../types";
+import type { Entry, PhotoInput } from "../types";
 import { repo } from "./db";
 import { developEntry } from "./develop";
 import { DEMO_OWNER } from "./owner-token";
@@ -25,6 +25,23 @@ export function ensureDemos(): Promise<void> {
 }
 
 const demoId = (id: string) => `${id}-v${DEMO_VERSION}`;
+
+let demoEntries: Promise<Entry[]> | null = null;
+
+export function getDemoEntries(): Promise<Entry[]> {
+  demoEntries ??= ensureDemos()
+    .then(() => Promise.all(DEMO_DAYS.map((d) => repo.get(DEMO_OWNER, demoId(d.id)))))
+    .then((list) => list.filter((e): e is Entry => Boolean(e)))
+    .then((list) => {
+      if (list.length < DEMO_DAYS.length) demoEntries = null;
+      return list;
+    })
+    .catch((err) => {
+      demoEntries = null;
+      throw err;
+    });
+  return demoEntries;
+}
 const publicFile = (src: string) => path.join(process.cwd(), "public", src);
 
 async function developDemo(d: (typeof DEMO_DAYS)[number]) {

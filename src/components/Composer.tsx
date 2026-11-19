@@ -266,7 +266,7 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
                   {p.status === "error" && <div className={s.thumbErr}>{p.error}</div>}
                   {p.status === "ready" && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.preview} alt={`Photograph ${i + 1}`} className={s.thumbImg} draggable={false} />
+                    <img decoding="async" src={p.preview} alt={`Photograph ${i + 1}`} className={s.thumbImg} draggable={false} />
                   )}
                   <div className={s.thumbBar}>
                     <span className={s.swatches}>{p.analysis?.palette.slice(0, 4).map((c) => <i key={c.hex} style={{ background: c.hex }} />)}</span>
@@ -529,7 +529,7 @@ function Darkroom({ step, progress, photos }: { step: string; progress: number; 
       <div className={s.tray}>
         {photos.slice(0, 3).map((p, i) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={p} src={p} alt="" style={{ animationDelay: `${i * 0.6}s` }} />
+          <img decoding="async" key={p} src={p} alt="" style={{ animationDelay: `${i * 0.6}s` }} />
         ))}
       </div>
       <p className={s.darkStep}>{step}</p>

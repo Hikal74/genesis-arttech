@@ -6,7 +6,7 @@
 .input { padding: var(--s-4); animation: slip 900ms var(--ease-out) both, float 7s ease-in-out infinite; }
 .input:nth-child(2) { animation-delay: 150ms, -2.3s; }
 .input:nth-child(3) { animation-delay: 300ms, -4.6s; }
-@keyframes slip { from { opacity: 0; transform: translateX(-20px); filter: blur(4px); } }
+@keyframes slip { from { opacity: 0; transform: translateX(-20px); } }
 @keyframes float { 50% { translate: 0 -5px; } }
 .note p { margin: 8px 0 0; font-size: 0.95rem; line-height: 1.45; color: var(--paper-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .prints { position: relative; height: 122px; }
@@ -31,7 +31,7 @@
 @keyframes develop { from { opacity: 0; filter: brightness(0.1) blur(10px); transform: translateZ(60px) scale(0.96); } }
 .outField { position: absolute; inset: 0; z-index: 1; }
 .outPhoto { position: absolute; z-index: 0; object-fit: cover; filter: var(--m-filter); }
-.outPhoto.film { inset: 10% 12% 38%; width: 76%; height: 52%; border: 10px solid #111; border-left-width: 22px; border-right-width: 22px; }
+.outPhoto.film { inset: 8% 12% 46%; width: 76%; height: 46%; border: 10px solid #111; border-left-width: 22px; border-right-width: 22px; }
 .outPhoto.editorial { top: 0; right: 0; width: 62%; height: 70%; }
 .outPhoto.collage { top: 8%; left: 14%; width: 66%; height: 50%; border: 8px solid #fff; transform: rotate(-4deg); box-shadow: 10px 12px 0 var(--m-accent2); }
 .outPhoto.minimal { top: 14%; left: 30%; width: 40%; height: 40%; }

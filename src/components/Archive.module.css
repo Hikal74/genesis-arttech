@@ -5,7 +5,7 @@
 .dates input { width: 158px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: clamp(16px, 2.2vw, 28px); }
 .cardIn { animation: cardIn 700ms var(--ease-out) both; }
-@keyframes cardIn { from { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(6px); } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(24px) scale(0.97); } }
 .month { margin-bottom: var(--s-8); display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--s-5); align-items: start; }
 .monthTitle { display: flex; flex-direction: column; gap: 2px; margin: 0; font-weight: 700; font-size: var(--t-2); letter-spacing: -0.04em; position: sticky; top: 180px; }
 .monthTitle span { font-size: 0.86rem; font-weight: 560; letter-spacing: 0; color: var(--paper-dim); }

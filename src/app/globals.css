@@ -17,7 +17,7 @@
   --ok: #97fce4;
   --danger: #ff8796;
 
-  --glass: rgba(14, 28, 31, 0.52);
+  --glass: rgba(12, 25, 28, 0.66);
   --glass-strong: rgba(16, 32, 35, 0.74);
   --glass-border: rgba(255, 255, 255, 0.075);
   --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -84,8 +84,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
   inset: 0;
   pointer-events: none;
   background-image: var(--grain);
-  opacity: 0.045;
-  mix-blend-mode: overlay;
+  opacity: 0.03;
   z-index: 100;
 }
 
@@ -110,8 +109,6 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .glass {
   position: relative;
   background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--r-2);
   box-shadow: var(--glass-hi), var(--shadow-1);
@@ -129,6 +126,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
   z-index: -1;
 }
 .glass:hover::before { opacity: 1; }
+.glass-blur { -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 
 .btn {
   position: relative;
@@ -139,8 +137,6 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
   transition: background var(--d-fast), color var(--d-fast), border-color var(--d-fast), transform var(--d-mid) var(--ease-spring), box-shadow var(--d-mid);
   white-space: nowrap;
 }
@@ -198,7 +194,7 @@ input[type="date"].input { color-scheme: dark; }
 @supports (animation-timeline: view()) {
   .reveal { animation: reveal linear both; animation-timeline: view(); animation-range: entry 0% cover 25%; }
 }
-@keyframes reveal { from { opacity: 0; transform: translateY(32px) scale(0.985); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes reveal { from { opacity: 0; transform: translateY(32px) scale(0.985); } to { opacity: 1; transform: none; } }
 
 .site-footer { margin-top: var(--s-10); border-top: 1px solid var(--line); padding: var(--s-7) 0 var(--s-8); position: relative; }
 article + .site-footer { margin-top: 0; }

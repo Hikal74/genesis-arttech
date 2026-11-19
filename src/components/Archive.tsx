@@ -56,7 +56,7 @@ export function Archive({ initial }: { initial: Summary[] }) {
 
   return (
     <div>
-      <div className={`glass ${s.controls}`}>
+      <div className={`glass glass-blur ${s.controls}`}>
         <label className={s.search}>
           <span className="visually-hidden">Search memories</span>
           <input className="input" type="search" placeholder="Search titles, words, songs, moods…" value={q} onChange={(e) => setQ(e.target.value)} />

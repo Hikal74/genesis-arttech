@@ -1,5 +1,6 @@
 .header { position: sticky; top: 0; z-index: 60; display: flex; justify-content: center; padding: 14px var(--gutter) 0; pointer-events: none; }
 .overlay { position: fixed; left: 0; right: 0; }
+.overlay .pill { background: rgba(5, 14, 16, 0.82); }
 .pill {
   pointer-events: auto;
   display: flex; align-items: center; gap: 6px;

@@ -43,7 +43,7 @@ export function Transform({ entries }: { entries: Entry[] }) {
           <div className={`glass ${s.input} ${s.prints}`}>
             {e.photos.slice(0, 3).map((p, k) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={p.media.key} src={p.media.url} alt="" style={{ "--k": k } as React.CSSProperties} />
+              <img decoding="async" key={p.media.key} src={p.media.url} alt="" style={{ "--k": k } as React.CSSProperties} />
             ))}
             <span className="meta">Photographs · {e.photos.length}</span>
           </div>
@@ -64,7 +64,7 @@ export function Transform({ entries }: { entries: Entry[] }) {
         <Link href={`/m/${e.id}`} className={s.output} style={designVars(d)} aria-label={`Open the memory “${e.title}”`}>
           <div className={s.outField}><GenerativeField design={d} intensity={0.7} /></div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={e.photos[0].media.url} alt="" className={`${s.outPhoto} ${s[d.treatment]}`} />
+          <img decoding="async" src={e.photos[0].media.url} alt="" className={`${s.outPhoto} ${s[d.treatment]}`} />
           <div className={s.outText}>
             <span className={s.outMeta}>{TREATMENT_LABEL[d.treatment]} · {e.day}</span>
             <h3 style={titleStyle(d, d.type.family === "serif" ? "clamp(1.9rem, 3.6vw, 3.2rem)" : "clamp(1.5rem, 2.6vw, 2.4rem)")}>{e.title}</h3>

@@ -17,7 +17,7 @@ export function MemoryCard({ entry, priority = false }: { entry: EntrySummary; p
       <div className={s.plate}>
         {entry.cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={entry.cover} alt="" className={s.photo} loading={priority ? "eager" : "lazy"} />
+          <img decoding="async" src={entry.cover} alt="" className={s.photo} loading={priority ? "eager" : "lazy"} />
         ) : (
           <div className={s.photo} />
         )}

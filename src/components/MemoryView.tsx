@@ -208,7 +208,7 @@ function Composition({ entry }: { entry: Entry }) {
     <div className={`${s.stack} ${cls} ${s[`t_${d.motion.transition}`]}`}>
       {photos.map((p, i) => (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={p.media.key} src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} className={i === active ? s.on : ""} loading={i === 0 ? "eager" : "lazy"} />
+        <img decoding="async" key={p.media.key} src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} className={i === active ? s.on : ""} loading={i === 0 ? "eager" : "lazy"} />
       ))}
     </div>
   );
@@ -239,7 +239,7 @@ function Composition({ entry }: { entry: Entry }) {
               return (
                 <figure key={p.media.key} className={s.print} style={{ left: `${pos[0]}%`, top: `${pos[1]}%`, width: `${pos[2]}%`, "--r": `${rot.toFixed(1)}deg`, animationDelay: `${i * 120}ms` } as React.CSSProperties}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} />
+                  <img decoding="async" src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} />
                   {i % 2 === 0 && <span className={s.tape} aria-hidden />}
                 </figure>
               );
@@ -336,7 +336,7 @@ function Gallery({ entry }: { entry: Entry }) {
         {entry.photos.map((p, i) => (
           <figure key={p.media.key} className={s.galleryItem} style={{ aspectRatio: `${p.width} / ${p.height}` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} loading="lazy" />
+            <img decoding="async" src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} loading="lazy" />
             <figcaption>
               <span className={s.swatchRow}>
                 {p.analysis.palette.slice(0, 5).map((c) => <i key={c.hex} style={{ background: c.hex }} />)}
@@ -462,7 +462,7 @@ function Reel({ entry, audio, onClose }: { entry: Entry; audio: Audio; onClose: 
       <div className={s.reelPhotos}>
         {entry.photos.map((p, i) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={p.media.key} src={p.media.url} alt="" className={i === photo ? s.on : ""} style={{ "--kb": `${(i % 2 ? -1 : 1) * 2}%` } as React.CSSProperties} />
+          <img decoding="async" key={p.media.key} src={p.media.url} alt="" className={i === photo ? s.on : ""} style={{ "--kb": `${(i % 2 ? -1 : 1) * 2}%` } as React.CSSProperties} />
         ))}
       </div>
       <div className={s.reelField}>

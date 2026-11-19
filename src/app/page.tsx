@@ -5,9 +5,7 @@ import { MemoryCard } from "@/components/MemoryCard";
 import { Transform } from "@/components/Transform";
 import { repo } from "@/lib/server/db";
 import { currentOwnerOrNull } from "@/lib/server/owner";
-import { DEMO_OWNER } from "@/lib/server/owner-token";
-import { ensureDemos } from "@/lib/server/seed";
-import type { Entry } from "@/lib/types";
+import { getDemoEntries } from "@/lib/server/seed";
 import s from "./page.module.css";
 
 const TREATMENTS = [
@@ -20,9 +18,8 @@ const TREATMENTS = [
 
 export default async function Home() {
   const owner = await currentOwnerOrNull();
-  await ensureDemos();
+  const demos = await getDemoEntries();
   const all = owner ? await repo.list(owner, {}) : [];
-  const demos = (await Promise.all(all.filter((e) => e.demo).map((e) => repo.get(DEMO_OWNER, e.id)))).filter((e): e is Entry => Boolean(e));
   const recent = all.filter((e) => !e.demo).slice(0, 3);
   const preview = recent.length ? recent : all.slice(0, 3);
   const words = demos.flatMap((d) => [...d.analysis.feelings.slice(0, 3), `${d.musicProfile.bpm} bpm`, d.analysis.timeOfDay.replace("-", " "), ...d.analysis.motifs.slice(0, 2)]).filter((w) => w && w !== "unknown");
