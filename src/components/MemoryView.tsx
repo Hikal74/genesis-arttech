@@ -8,6 +8,7 @@ import { mulberry32 } from "@/lib/engine/random";
 import { designVars, formatDay, titleStyle, TREATMENT_LABEL } from "@/lib/theme";
 import { PROVIDER_LABEL } from "@/lib/music-link";
 import { GenerativeField } from "./GenerativeField";
+import { Photo } from "./Photo";
 import { Waveform } from "./Waveform";
 import { Explain } from "./Explain";
 import s from "./Memory.module.css";
@@ -135,7 +136,7 @@ export function MemoryView({ entry, fresh = false }: { entry: Entry; fresh?: boo
         </div>
       </section>
 
-      <section className={s.entrySection}>
+      <section className={`cv ${s.entrySection}`}>
         <div className={s.entryGrid}>
           <aside className={s.entryAside}>
             <p className={s.kicker}>{formatDay(entry.day)}</p>
@@ -207,8 +208,7 @@ function Composition({ entry }: { entry: Entry }) {
   const stack = (cls: string) => (
     <div className={`${s.stack} ${cls} ${s[`t_${d.motion.transition}`]}`}>
       {photos.map((p, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img decoding="async" key={p.media.key} src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} className={i === active ? s.on : ""} loading={i === 0 ? "eager" : "lazy"} />
+        <Photo key={p.media.key} src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} width={p.width} height={p.height} sizes="(max-width: 860px) 100vw, 60vw" className={i === active ? s.on : ""} priority={i === 0} />
       ))}
     </div>
   );
@@ -238,8 +238,7 @@ function Composition({ entry }: { entry: Entry }) {
               const pos = COLLAGE_SLOTS[photos.length > 4 ? 4 : photos.length - 1][i] ?? COLLAGE_SLOTS[4][i % 5];
               return (
                 <figure key={p.media.key} className={s.print} style={{ left: `${pos[0]}%`, top: `${pos[1]}%`, width: `${pos[2]}%`, "--r": `${rot.toFixed(1)}deg`, animationDelay: `${i * 120}ms` } as React.CSSProperties}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img decoding="async" src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} />
+                  <Photo src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} width={p.width} height={p.height} sizes="(max-width: 860px) 60vw, 520px" />
                   {i % 2 === 0 && <span className={s.tape} aria-hidden />}
                 </figure>
               );
@@ -330,13 +329,12 @@ function Timecode({ beatMs, time }: { beatMs: number; time: number | null }) {
 
 function Gallery({ entry }: { entry: Entry }) {
   return (
-    <section className={s.gallery}>
+    <section className={`cv ${s.gallery}`}>
       <p className={s.kicker}>Photographs · {entry.photos.length}</p>
       <div className={s.galleryGrid}>
         {entry.photos.map((p, i) => (
           <figure key={p.media.key} className={s.galleryItem} style={{ aspectRatio: `${p.width} / ${p.height}` }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img decoding="async" src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} loading="lazy" />
+            <Photo src={p.media.url} alt={entry.analysis.photoNotes[i]?.subject ?? `Photograph ${i + 1}`} width={p.width} height={p.height} sizes="(max-width: 760px) 92vw, 420px" />
             <figcaption>
               <span className={s.swatchRow}>
                 {p.analysis.palette.slice(0, 5).map((c) => <i key={c.hex} style={{ background: c.hex }} />)}
@@ -461,8 +459,7 @@ function Reel({ entry, audio, onClose }: { entry: Entry; audio: Audio; onClose: 
     <div className={`${s.reel} ${s[`t_${d.motion.transition}`]}`} role="dialog" aria-modal="true" aria-label={`${entry.title} — reel`}>
       <div className={s.reelPhotos}>
         {entry.photos.map((p, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img decoding="async" key={p.media.key} src={p.media.url} alt="" className={i === photo ? s.on : ""} style={{ "--kb": `${(i % 2 ? -1 : 1) * 2}%` } as React.CSSProperties} />
+          <Photo key={p.media.key} src={p.media.url} alt="" width={p.width} height={p.height} sizes="100vw" className={i === photo ? s.on : ""} style={{ "--kb": `${(i % 2 ? -1 : 1) * 2}%` } as React.CSSProperties} />
         ))}
       </div>
       <div className={s.reelField}>

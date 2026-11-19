@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Spotlight } from "@/components/Spotlight";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: false });
 const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument", display: "swap" });
 
 export const metadata: Metadata = {

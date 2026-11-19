@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Entry } from "@/lib/types";
 import { designVars, titleStyle, TREATMENT_LABEL } from "@/lib/theme";
 import { GenerativeField } from "./GenerativeField";
+import { Photo } from "./Photo";
 import { Waveform } from "./Waveform";
 import s from "./Transform.module.css";
 import Link from "next/link";
@@ -42,8 +43,7 @@ export function Transform({ entries }: { entries: Entry[] }) {
           </div>
           <div className={`glass ${s.input} ${s.prints}`}>
             {e.photos.slice(0, 3).map((p, k) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img decoding="async" key={p.media.key} src={p.media.url} alt="" style={{ "--k": k } as React.CSSProperties} />
+              <Photo key={p.media.key} src={p.media.url} alt="" width={p.width} height={p.height} sizes="120px" style={{ "--k": k } as React.CSSProperties} />
             ))}
             <span className="meta">Photographs · {e.photos.length}</span>
           </div>
@@ -63,8 +63,7 @@ export function Transform({ entries }: { entries: Entry[] }) {
 
         <Link href={`/m/${e.id}`} className={s.output} style={designVars(d)} aria-label={`Open the memory “${e.title}”`}>
           <div className={s.outField}><GenerativeField design={d} intensity={0.7} /></div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img decoding="async" src={e.photos[0].media.url} alt="" className={`${s.outPhoto} ${s[d.treatment]}`} />
+          <Photo src={e.photos[0].media.url} alt="" width={e.photos[0].width} height={e.photos[0].height} sizes="(max-width: 860px) 90vw, 480px" className={`${s.outPhoto} ${s[d.treatment]}`} priority />
           <div className={s.outText}>
             <span className={s.outMeta}>{TREATMENT_LABEL[d.treatment]} · {e.day}</span>
             <h3 style={titleStyle(d, d.type.family === "serif" ? "clamp(1.9rem, 3.6vw, 3.2rem)" : "clamp(1.5rem, 2.6vw, 2.4rem)")}>{e.title}</h3>

@@ -24,7 +24,7 @@ export function Explain({ entry }: { entry: Entry }) {
   const max = Math.max(...scores.map(([, v]) => v), 0.01);
 
   return (
-    <section className={s.explain}>
+    <section className={`cv ${s.explain}`}>
       <div className={s.explainHead}>
         <p className={s.kicker}>How this day became this memory</p>
         <h2 className={s.explainTitle}>Every visual choice has a reason.</h2>

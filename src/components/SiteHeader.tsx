@@ -1,8 +1,9 @@
 "use client";
 
-import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef, useState } from "react";
+import { Logo } from "./Logo";
 import s from "./SiteHeader.module.css";
 
 const LINKS = [
@@ -13,23 +14,29 @@ const LINKS = [
 export function SiteHeader() {
   const path = usePathname();
   const onMemory = path.startsWith("/m/") && !path.endsWith("/edit");
+  const links = useRef<HTMLDivElement>(null);
+  const [indicator, setIndicator] = useState<{ x: number; w: number } | null>(null);
+  const activeIndex = LINKS.findIndex((l) => (l.href === "/" ? path === "/" : path.startsWith(l.href)));
+
+  useLayoutEffect(() => {
+    const el = links.current?.children[activeIndex] as HTMLElement | undefined;
+    setIndicator(el ? { x: el.offsetLeft, w: el.offsetWidth } : null);
+  }, [activeIndex]);
+
   return (
     <header className={`${s.header} ${onMemory ? s.overlay : ""}`}>
       <nav className={s.pill} aria-label="Main">
         <Link href="/" className={s.brand} aria-label="Felt — home">
-          <span className={s.mark} aria-hidden><i /></span>
+          <Logo size={30} />
           <b>Felt</b>
         </Link>
-        <div className={s.links}>
-          {LINKS.map((l) => {
-            const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
-            return (
-              <Link key={l.href} href={l.href} className={s.link} aria-current={active ? "page" : undefined}>
-                {active && <motion.span layoutId="nav-active" className={s.active} transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
-                <span>{l.label}</span>
-              </Link>
-            );
-          })}
+        <div className={s.links} ref={links}>
+          {LINKS.map((l, i) => (
+            <Link key={l.href} href={l.href} className={s.link} aria-current={i === activeIndex ? "page" : undefined}>
+              <span>{l.label}</span>
+            </Link>
+          ))}
+          <span className={s.active} style={indicator ? { transform: `translateX(${indicator.x}px)`, width: indicator.w, opacity: 1 } : { opacity: 0 }} aria-hidden />
         </div>
         <Link href="/new" className={`btn btn-primary btn-small ${s.cta}`}>
           <span className={s.plus} aria-hidden>+</span> New day

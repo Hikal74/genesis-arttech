@@ -96,7 +96,7 @@ export function Archive({ initial }: { initial: Summary[] }) {
       ) : (
         <div className={loading ? s.dim : undefined}>
           {groups.map(([month, list]) => (
-            <section key={month} className={s.month}>
+            <section key={month} className={`cv ${s.month}`}>
               <h2 className={s.monthTitle}>
                 {new Date(`${month}-15T12:00:00`).toLocaleDateString("en-GB", { month: "long" })}
                 <span>{month.slice(0, 4)}</span>

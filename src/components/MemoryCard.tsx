@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { EntrySummary } from "@/lib/types";
 import { formatDay, TREATMENT_LABEL } from "@/lib/theme";
+import { Photo } from "./Photo";
 import { Waveform } from "./Waveform";
 import s from "./MemoryCard.module.css";
 
@@ -16,8 +17,7 @@ export function MemoryCard({ entry, priority = false }: { entry: EntrySummary; p
     >
       <div className={s.plate}>
         {entry.cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img decoding="async" src={entry.cover} alt="" className={s.photo} loading={priority ? "eager" : "lazy"} />
+          <Photo src={entry.cover} alt="" width={1400} height={1050} sizes="(max-width: 760px) 92vw, 400px" className={s.photo} priority={priority} />
         ) : (
           <div className={s.photo} />
         )}

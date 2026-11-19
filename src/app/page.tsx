@@ -60,7 +60,7 @@ export default async function Home() {
         </div>
       )}
 
-      <section className={`wrap ${s.how}`}>
+      <section className={`wrap cv ${s.how}`}>
         <div className={s.sectionHead}>
           <span className="meta">How it works</span>
           <h2 className={`display ${s.h2}`}>Three inputs. <em>One atmosphere.</em></h2>
@@ -99,7 +99,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className={`wrap ${s.treatments}`}>
+      <section className={`wrap cv ${s.treatments}`}>
         <div className={s.sectionHead}>
           <span className="meta">The visual system</span>
           <h2 className={`display ${s.h2}`}>Five ways a day can <em>develop.</em></h2>
@@ -120,7 +120,7 @@ export default async function Home() {
       </section>
 
       {preview.length > 0 && (
-        <section className={`wrap ${s.archive}`}>
+        <section className={`wrap cv ${s.archive}`}>
           <div className={s.archiveHead}>
             <div className={s.sectionHead}>
               <span className="meta">{recent.length ? "Your diary" : "Demonstration days"}</span>
@@ -134,7 +134,7 @@ export default async function Home() {
         </section>
       )}
 
-      <section className={`wrap ${s.principles}`}>
+      <section className={`wrap cv ${s.principles}`}>
         {[
           ["lock", "Private by default", "Each browser gets its own diary key. Entries, photos and audio are only served back to it."],
           ["spark", "Explainable", "Every memory shows which words, colours and beats led to which visual choices."],
