@@ -22,7 +22,6 @@
 .arrow span { position: relative; width: 2px; height: 140px; border-radius: 2px; background: rgba(151, 252, 228, 0.12); overflow: hidden; }
 .arrow span::after { content: ""; position: absolute; left: 0; right: 0; height: 40%; background: linear-gradient(transparent, var(--safelight), transparent); animation: flow 1.8s linear infinite; }
 @keyframes flow { from { top: -40%; } to { top: 100%; } }
-.arrow em { font-style: normal; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper-faint); white-space: nowrap; writing-mode: vertical-rl; transform: rotate(180deg); }
 
 .output { position: relative; display: block; aspect-ratio: 4 / 4.8; overflow: hidden; isolation: isolate; border-radius: var(--r-3); transform: translateZ(60px); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 50px 100px -40px rgba(0, 0, 0, 0.9), 0 0 80px -30px var(--m-accent); animation: develop 1.6s var(--ease-out) 300ms both; transition: box-shadow var(--d-mid); }
 .output:hover { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 60px 120px -40px rgba(0, 0, 0, 0.9), 0 0 120px -20px var(--m-accent); }
@@ -38,8 +37,7 @@
 .outPhoto.abstract { top: 6%; left: 24%; width: 70%; height: 60%; filter: grayscale(1) contrast(1.3) brightness(0.8); }
 .outText { position: absolute; z-index: 2; left: 7%; right: 7%; bottom: 8%; }
 .outText h3 { margin: 6px 0 0; overflow-wrap: anywhere; }
-.outText p { margin: 10px 0 0; font-family: var(--font-serif); font-style: italic; color: var(--m-muted); font-size: 1.05rem; }
-.outMeta { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--m-muted); }
+.outText p { margin: 10px 0 0; color: var(--m-muted); font-size: 0.98rem; }
 .outSwatches { position: absolute; z-index: 2; top: 16px; left: 16px; display: flex; gap: 3px; }
 .outSwatches i { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15); }
 
@@ -47,12 +45,11 @@
 .tabs button { padding: 8px 14px; border-radius: 999px; font-size: 0.86rem; font-weight: 560; color: var(--paper-dim); transition: background var(--d-mid) var(--ease-out), color var(--d-fast); }
 .tabs button:hover { color: var(--paper); }
 .tabs button[aria-selected="true"] { background: rgba(255, 255, 255, 0.11); color: var(--paper); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1); }
-.tabNo { font-family: var(--font-mono); font-size: 0.72rem; color: var(--safelight); margin-right: 6px; }
+.tabNo { font-size: 0.78rem; font-weight: 600; color: var(--safelight); margin-right: 6px; }
 
 @media (max-width: 860px) {
   .scene { grid-template-columns: 1fr; transform: none; }
   .inputs, .output { transform: none; }
   .arrow span { height: 36px; }
-  .arrow em { writing-mode: horizontal-tb; transform: none; }
-  .tabs { border-radius: var(--r-2); }
+    .tabs { border-radius: var(--r-2); }
 }

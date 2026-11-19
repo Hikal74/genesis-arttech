@@ -26,10 +26,10 @@
 .row, .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .foot { margin-top: auto; }
 .foot svg { flex: 1; }
-.meta { font-family: var(--font-sans); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-muted); white-space: nowrap; }
-.demo { font-family: var(--font-sans); font-weight: 650; font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--c-accent); color: var(--c-accent); }
+.meta { font-size: 0.78rem; font-weight: 500; color: var(--c-muted); white-space: nowrap; }
+.demo { font-size: 0.72rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--c-accent); color: var(--c-accent); }
 .title { margin: 0; font-size: clamp(1.5rem, 2.3vw, 2rem); line-height: 0.98; overflow-wrap: anywhere; }
-.atmos { margin: 0; font-size: 0.86rem; color: var(--c-muted); font-style: italic; font-family: var(--font-serif); font-size: 1.05rem; }
+.atmos { margin: 0; font-size: 0.92rem; color: var(--c-muted); }
 
 .film .plate { border-radius: 6px; margin: 12px 12px 0; border: 6px solid #111; border-left-width: 14px; border-right-width: 14px; aspect-ratio: 4 / 3; }
 .film .plate::before, .film .plate::after {

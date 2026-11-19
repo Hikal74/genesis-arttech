@@ -8,7 +8,6 @@ import s from "./MemoryCard.module.css";
 export function MemoryCard({ entry, priority = false }: { entry: EntrySummary; priority?: boolean }) {
   const p = entry.palette;
   const t = entry.type;
-  const family = t.family === "serif" ? "var(--font-serif)" : t.family === "mono" ? "var(--font-mono)" : "var(--font-sans)";
   return (
     <Link
       href={`/m/${entry.id}`}
@@ -34,12 +33,10 @@ export function MemoryCard({ entry, priority = false }: { entry: EntrySummary; p
         <h3
           className={s.title}
           style={{
-            fontFamily: family,
-            fontStyle: t.italic ? "italic" : "normal",
-            fontWeight: t.family === "serif" ? 400 : t.weight,
-            fontVariationSettings: t.family === "grotesk" ? `"wdth" ${t.width}` : undefined,
+            fontFamily: t.family === "mono" ? "var(--font-mono)" : "var(--font-display)",
+            fontWeight: t.family === "serif" ? 300 : t.family === "mono" ? 500 : t.weight,
             textTransform: t.uppercase ? "uppercase" : "none",
-            letterSpacing: `${t.tracking}em`,
+            letterSpacing: t.family === "mono" ? `${t.tracking}em` : "-0.035em",
           }}
         >
           {entry.title}

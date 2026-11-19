@@ -9,7 +9,6 @@ export default function NewPage() {
   return (
     <main className="wrap" style={{ paddingTop: "var(--s-7)", paddingBottom: "var(--s-10)" }}>
       <header style={{ marginBottom: "var(--s-8)", maxWidth: 900 }}>
-        <p className="meta">New entry</p>
         <h1 className="display" style={{ fontSize: "var(--t-1)" }}>
           How did today <em>feel?</em>
         </h1>

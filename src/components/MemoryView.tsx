@@ -121,7 +121,7 @@ export function MemoryView({ entry, fresh = false }: { entry: Entry; fresh?: boo
         <div className={s.lightLayer} aria-hidden />
         <Composition entry={entry} />
         <div className={s.textures} aria-hidden />
-        <Ornaments entry={entry} playing={audio.playing} time={audio.time} />
+        <Ornaments entry={entry} />
 
         <div className={s.stageBar}>
           <button className={s.playMemory} onClick={() => setReel(true)}>
@@ -295,37 +295,21 @@ const COLLAGE_SLOTS: number[][][] = [
   [[0, 0, 38], [38, 4, 34], [70, 0, 30], [10, 46, 40], [52, 44, 40]],
 ];
 
-function Ornaments({ entry, playing, time }: { entry: Entry; playing: boolean; time: number }) {
+function Ornaments({ entry }: { entry: Entry }) {
   const o = entry.design.ornaments;
   return (
     <div className={s.ornaments} aria-hidden>
-      {o.includes("frame-numbers") && <span className={s.frameNo}>{`▸ ${String((entry.design.seed % 36) + 1).padStart(2, "0")}A  FELT 400 · 24×36`}</span>}
-      {o.includes("timecode") && <Timecode beatMs={entry.design.motion.beatMs} time={playing ? time : null} />}
       {o.includes("registration") && (
         <>
           <span className={`${s.reg} ${s.regTL}`} />
           <span className={`${s.reg} ${s.regBR}`} />
         </>
       )}
-      {o.includes("folio") && <span className={s.folio}>{`Nº ${entry.id.slice(-4).toUpperCase()} — ${formatDay(entry.day, "short")}`}</span>}
       {o.includes("sun") && <span className={s.sun} />}
     </div>
   );
 }
 
-function Timecode({ beatMs, time }: { beatMs: number; time: number | null }) {
-  const [now, setNow] = useState(0);
-  useEffect(() => {
-    const start = performance.now();
-    const t = setInterval(() => setNow(performance.now() - start), beatMs / 2);
-    return () => clearInterval(t);
-  }, [beatMs]);
-  const ms = time !== null ? time * 1000 : now;
-  const f = Math.floor((ms % 1000) / 41.67);
-  const sec = Math.floor(ms / 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return <span className={s.timecode}>{`${pad(Math.floor(sec / 3600))}:${pad(Math.floor(sec / 60) % 60)}:${pad(sec % 60)}:${pad(f)}`}</span>;
-}
 
 function Gallery({ entry }: { entry: Entry }) {
   return (

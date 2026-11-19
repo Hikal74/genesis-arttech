@@ -10,13 +10,16 @@ import { repo } from "./db";
 import { developEntry } from "./develop";
 import { DEMO_OWNER } from "./owner-token";
 
-const DEMO_VERSION = "1";
+const DEMO_VERSION = "2";
 let seeding: Promise<void> | null = null;
 
 export function ensureDemos(): Promise<void> {
   seeding ??= (async () => {
-    if (await repo.hasDemos(DEMO_DAYS.map((d) => demoId(d.id)))) return;
-    for (const d of DEMO_DAYS) await developDemo(d);
+    const ids = DEMO_DAYS.map((d) => demoId(d.id));
+    if (!(await repo.hasDemos(ids))) {
+      for (const d of DEMO_DAYS) await developDemo(d);
+    }
+    await repo.removeStaleDemos(ids);
   })().catch((err) => {
     seeding = null;
     console.error("Demo seeding failed", err);

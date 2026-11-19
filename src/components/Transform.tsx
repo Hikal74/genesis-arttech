@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Entry } from "@/lib/types";
-import { designVars, titleStyle, TREATMENT_LABEL } from "@/lib/theme";
+import { designVars, titleStyle } from "@/lib/theme";
 import { GenerativeField } from "./GenerativeField";
 import { Photo } from "./Photo";
 import { Waveform } from "./Waveform";
@@ -58,14 +58,12 @@ export function Transform({ entries }: { entries: Entry[] }) {
 
         <div className={s.arrow} aria-hidden>
           <span />
-          <em>develops into</em>
         </div>
 
         <Link href={`/m/${e.id}`} className={s.output} style={designVars(d)} aria-label={`Open the memory “${e.title}”`}>
           <div className={s.outField}><GenerativeField design={d} intensity={0.7} /></div>
           <Photo src={e.photos[0].media.url} alt="" width={e.photos[0].width} height={e.photos[0].height} sizes="(max-width: 860px) 90vw, 480px" className={`${s.outPhoto} ${s[d.treatment]}`} priority />
           <div className={s.outText}>
-            <span className={s.outMeta}>{TREATMENT_LABEL[d.treatment]} · {e.day}</span>
             <h3 style={titleStyle(d, d.type.family === "serif" ? "clamp(1.9rem, 3.6vw, 3.2rem)" : "clamp(1.5rem, 2.6vw, 2.4rem)")}>{e.title}</h3>
             <p>{e.analysis.atmosphere}</p>
           </div>

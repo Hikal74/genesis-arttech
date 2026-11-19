@@ -84,7 +84,7 @@ export function buildDesign({ text, photos, music, seed }: Inputs): MemoryDesign
   else if (treatment === "minimal" && T.nostalgia < 0.3) family = "grotesk";
   const type: MemoryDesign["type"] = {
     family,
-    italic: family === "serif" && (T.nostalgia > 0.4 || calm > 0.6),
+    italic: false,
     weight: family === "serif" ? 400 : Math.round(300 + 550 * energy),
     width: family === "grotesk" ? Math.round(clamp((energy - 0.3) / 0.7) * 50 + 75) : family === "mono" ? 100 : 100,
     tracking: family === "mono" ? 0.04 + T.tension * 0.06 : family === "grotesk" ? -0.03 + (1 - energy) * 0.03 : -0.015,
@@ -95,10 +95,10 @@ export function buildDesign({ text, photos, music, seed }: Inputs): MemoryDesign
     "text",
     family === "mono" ? `Pressure and focus (tension ${pct(T.tension)})` : family === "grotesk" ? `Momentum (energy ${pct(energy)}, lightness ${signed(T.valence)})` : `Reflective tone (nostalgia ${pct(T.nostalgia)}, calm ${pct(calm)})`,
     family === "mono"
-      ? "Monospaced, tracked-out uppercase type — the language of terminals and timestamps"
+      ? "Monospaced uppercase type — the language of terminals and timestamps"
       : family === "grotesk"
-        ? `Wide grotesk type at weight ${type.weight}, stretched to ${type.width}% width`
-        : `Serif display type${type.italic ? " in italic" : ""}, set close and quiet`,
+        ? `Heavy display type at weight ${type.weight}, set tight and loud`
+        : "Light, airy display type, set close and quiet",
   );
 
   const composition: MemoryDesign["composition"] = {

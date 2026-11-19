@@ -58,6 +58,7 @@ interface Repo {
   save(entry: Entry): Promise<void>;
   remove(owner: string, id: string): Promise<boolean>;
   hasDemos(ids: string[]): Promise<boolean>;
+  removeStaleDemos(keep: string[]): Promise<void>;
 }
 
 let sql: postgres.Sql | null = null;
@@ -118,6 +119,11 @@ const postgresRepo: Repo = {
     const rows = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM felt_entries WHERE id IN ${sql(ids)}`;
     return rows[0].n === ids.length;
   },
+  async removeStaleDemos(keep) {
+    const { sql, ready } = pg();
+    await ready;
+    await sql`DELETE FROM felt_entries WHERE owner = ${DEMO_OWNER} AND NOT (id IN ${sql(keep)})`;
+  },
 };
 
 const FILE = path.join(DATA_ROOT, "entries.json");
@@ -176,6 +182,9 @@ const fileRepo: Repo = {
     await queue;
     const all = await readAll();
     return ids.every((id) => all.some((e) => e.id === id));
+  },
+  removeStaleDemos(keep) {
+    return writeLocked(async (all) => ({ all: all.filter((e) => e.owner !== DEMO_OWNER || keep.includes(e.id)), result: undefined }));
   },
 };
 

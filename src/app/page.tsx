@@ -30,7 +30,6 @@ export default async function Home() {
     <main>
       <section className={`wrap ${s.hero}`}>
         <div className={s.heroText}>
-          <span className={s.eyebrow}><i /> Genesis ArtTech 2026 · Make the invisible visible</span>
           <h1 className={`display ${s.heroTitle}`}>
             People remember how a day <em>felt.</em>
           </h1>
@@ -62,7 +61,6 @@ export default async function Home() {
 
       <section className={`wrap cv ${s.how}`}>
         <div className={s.sectionHead}>
-          <span className="meta">How it works</span>
           <h2 className={`display ${s.h2}`}>Three inputs. <em>One atmosphere.</em></h2>
         </div>
         <div className={s.cols}>
@@ -101,7 +99,6 @@ export default async function Home() {
 
       <section className={`wrap cv ${s.treatments}`}>
         <div className={s.sectionHead}>
-          <span className="meta">The visual system</span>
           <h2 className={`display ${s.h2}`}>Five ways a day can <em>develop.</em></h2>
           <p className="muted">Every memory scores all five against its inputs, then tunes palette, type, texture, light and motion — so no two days look alike.</p>
         </div>
@@ -123,7 +120,6 @@ export default async function Home() {
         <section className={`wrap cv ${s.archive}`}>
           <div className={s.archiveHead}>
             <div className={s.sectionHead}>
-              <span className="meta">{recent.length ? "Your diary" : "Demonstration days"}</span>
               <h2 className={`display ${s.h2}`}>{recent.length ? "Recently developed" : "Open a memory"}</h2>
             </div>
             <Link href="/archive" className="btn">See every day →</Link>
