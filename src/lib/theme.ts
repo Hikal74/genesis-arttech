@@ -34,7 +34,7 @@ export function designVars(d: MemoryDesign): CSSProperties {
 
 export function titleStyle(d: MemoryDesign, size?: string): CSSProperties {
   const t = d.type;
-  const family = t.family === "serif" ? "var(--font-display)" : t.family === "mono" ? "var(--font-mono)" : "var(--font-sans)";
+  const family = t.family === "serif" ? "var(--font-serif)" : t.family === "mono" ? "var(--font-mono)" : "var(--font-sans)";
   return {
     fontFamily: family,
     fontStyle: t.italic ? "italic" : "normal",

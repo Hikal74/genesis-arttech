@@ -56,7 +56,7 @@ export function Archive({ initial }: { initial: Summary[] }) {
 
   return (
     <div>
-      <div className={s.controls}>
+      <div className={`glass ${s.controls}`}>
         <label className={s.search}>
           <span className="visually-hidden">Search memories</span>
           <input className="input" type="search" placeholder="Search titles, words, songs, moods…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -102,7 +102,11 @@ export function Archive({ initial }: { initial: Summary[] }) {
                 <span>{month.slice(0, 4)}</span>
               </h2>
               <div className={s.grid}>
-                {list.map((e, i) => <MemoryCard key={e.id} entry={{ ...e, keywords: "" }} priority={i < 3} />)}
+                {list.map((e, i) => (
+                  <div key={e.id} className={s.cardIn} style={{ animationDelay: `${i * 70}ms` }}>
+                    <MemoryCard entry={{ ...e, keywords: "" }} priority={i < 3} />
+                  </div>
+                ))}
               </div>
             </section>
           ))}
@@ -110,7 +114,7 @@ export function Archive({ initial }: { initial: Summary[] }) {
       )}
 
       {!filtered && mine === 0 && entries.length > 0 && (
-        <div className={s.nudge}>
+        <div className={`glass ${s.nudge}`}>
           <p>The days above are demonstrations. Your own memories will appear here, in order, alongside them.</p>
           <Link href="/new" className="btn btn-primary">Write your first day</Link>
         </div>
@@ -137,7 +141,7 @@ export function DiaryKey() {
   };
 
   return (
-    <section className={s.key}>
+    <section className={`glass ${s.key}`}>
       <div>
         <p className="meta">Your diary key</p>
         <p className={s.keyText}>

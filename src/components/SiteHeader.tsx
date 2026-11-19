@@ -1,45 +1,40 @@
 "use client";
 
+import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import s from "./SiteHeader.module.css";
+
+const LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/archive", label: "Archive" },
+];
 
 export function SiteHeader() {
   const path = usePathname();
-  if (path.startsWith("/m/") && !path.endsWith("/edit")) return <MemoryHeader />;
+  const onMemory = path.startsWith("/m/") && !path.endsWith("/edit");
   return (
-    <header className="site-header">
-      <div className="wrap">
-        <Wordmark />
-        <nav className="site-nav" aria-label="Main">
-          <Link href="/archive" aria-current={path === "/archive" ? "page" : undefined}>Archive</Link>
-          <Link href="/new" className="btn btn-small btn-primary" aria-current={path === "/new" ? "page" : undefined} style={{ color: "var(--ink-0)" }}>
-            New day
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-function Wordmark() {
-  return (
-    <Link href="/" className="wordmark" aria-label="Felt — home">
-      <span className="dot" aria-hidden />
-      <b>Felt</b>
-    </Link>
-  );
-}
-
-function MemoryHeader() {
-  return (
-    <header className="site-header" style={{ position: "absolute", width: "100%", background: "none", mixBlendMode: "difference" }}>
-      <div className="wrap">
-        <Wordmark />
-        <nav className="site-nav" aria-label="Main">
-          <Link href="/archive">Archive</Link>
-          <Link href="/new">New day</Link>
-        </nav>
-      </div>
+    <header className={`${s.header} ${onMemory ? s.overlay : ""}`}>
+      <nav className={s.pill} aria-label="Main">
+        <Link href="/" className={s.brand} aria-label="Felt — home">
+          <span className={s.mark} aria-hidden><i /></span>
+          <b>Felt</b>
+        </Link>
+        <div className={s.links}>
+          {LINKS.map((l) => {
+            const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
+            return (
+              <Link key={l.href} href={l.href} className={s.link} aria-current={active ? "page" : undefined}>
+                {active && <motion.span layoutId="nav-active" className={s.active} transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                <span>{l.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+        <Link href="/new" className={`btn btn-primary btn-small ${s.cta}`}>
+          <span className={s.plus} aria-hidden>+</span> New day
+        </Link>
+      </nav>
     </header>
   );
 }

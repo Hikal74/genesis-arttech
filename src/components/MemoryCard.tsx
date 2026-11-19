@@ -7,7 +7,7 @@ import s from "./MemoryCard.module.css";
 export function MemoryCard({ entry, priority = false }: { entry: EntrySummary; priority?: boolean }) {
   const p = entry.palette;
   const t = entry.type;
-  const family = t.family === "serif" ? "var(--font-display)" : t.family === "mono" ? "var(--font-mono)" : "var(--font-sans)";
+  const family = t.family === "serif" ? "var(--font-serif)" : t.family === "mono" ? "var(--font-mono)" : "var(--font-sans)";
   return (
     <Link
       href={`/m/${entry.id}`}

@@ -24,25 +24,34 @@ export function Transform({ entries }: { entries: Entry[] }) {
   const excerpt = e.text.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
 
   return (
-    <div className={s.shell} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+    <div
+      className={s.shell}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={(ev) => { setPaused(false); ev.currentTarget.style.setProperty("--rx", "0deg"); ev.currentTarget.style.setProperty("--ry", "0deg"); }}
+      onPointerMove={(ev) => {
+        const r = ev.currentTarget.getBoundingClientRect();
+        ev.currentTarget.style.setProperty("--ry", `${((ev.clientX - r.left) / r.width - 0.5) * 10}deg`);
+        ev.currentTarget.style.setProperty("--rx", `${-((ev.clientY - r.top) / r.height - 0.5) * 8}deg`);
+      }}
+    >
       <div key={e.id} className={s.scene}>
         <div className={s.inputs}>
-          <div className={`${s.input} ${s.note}`}>
+          <div className={`glass ${s.input} ${s.note}`}>
             <span className="meta">Words</span>
             <p>{excerpt}</p>
           </div>
-          <div className={`${s.input} ${s.prints}`}>
+          <div className={`glass ${s.input} ${s.prints}`}>
             {e.photos.slice(0, 3).map((p, k) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img key={p.media.key} src={p.media.url} alt="" style={{ "--k": k } as React.CSSProperties} />
             ))}
             <span className="meta">Photographs · {e.photos.length}</span>
           </div>
-          <div className={`${s.input} ${s.song}`}>
+          <div className={`glass ${s.input} ${s.song}`}>
             <span className={s.beat} style={{ animationDuration: `${d.motion.beatMs}ms` }} />
             <div>
               <span className="meta">Music · {e.musicProfile.bpm} bpm · {e.musicProfile.key ?? e.musicProfile.mode}</span>
-              <Waveform envelope={e.musicProfile.envelope} color="var(--paper-dim)" height={22} />
+              <Waveform envelope={e.musicProfile.envelope} color="var(--safelight)" height={22} />
             </div>
           </div>
         </div>

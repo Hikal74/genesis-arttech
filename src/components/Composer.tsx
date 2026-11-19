@@ -7,6 +7,7 @@ import type { AudioAnalysis, Entry, ImageAnalysis, MediaRef, MusicFeel } from "@
 import { analyzeTextLocally } from "@/lib/analysis/text";
 import { analyzeAudioFile, preparePhoto, uploadMedia, type AppConfig } from "@/lib/client/media";
 import { PROVIDER_LABEL } from "@/lib/music-link";
+import { Icon } from "./Icon";
 import { Waveform } from "./Waveform";
 import s from "./Composer.module.css";
 
@@ -71,6 +72,7 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
   const musicReady = music?.kind === "file" ? music.status === "ready" : music?.kind === "link" ? music.status === "ready" : false;
   const textReady = text.trim().length >= 12;
   const busyPhotos = photos.some((p) => p.status === "processing");
+  const doneCount = Number(textReady) + Number(readyPhotos.length > 0) + Number(musicReady);
   const canDevelop = textReady && readyPhotos.length > 0 && musicReady && !busyPhotos && !phase;
 
   const addPhotos = useCallback(async (files: FileList | File[]) => {
@@ -215,9 +217,9 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
   return (
     <div className={s.composer}>
       <div className={s.main}>
-        <section className={s.block}>
+        <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}>01</span>
+            <span className={s.num}><Icon name="pen" size={18} /></span>
             <h2>The day, in your words</h2>
           </header>
           <div className={s.dateRow}>
@@ -249,9 +251,9 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
           {touched && !textReady && <p className="notice error">Write at least a sentence or two about the day.</p>}
         </section>
 
-        <section className={s.block}>
+        <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}>02</span>
+            <span className={s.num}><Icon name="image" size={18} /></span>
             <h2>Photographs</h2>
             <span className="meta">{photos.length}/12 · first one leads</span>
           </header>
@@ -282,9 +284,9 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
           {touched && readyPhotos.length === 0 && <p className="notice error">Add at least one photograph.</p>}
         </section>
 
-        <section className={s.block}>
+        <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}>03</span>
+            <span className={s.num}><Icon name="music" size={18} /></span>
             <h2>The song of the day</h2>
           </header>
           <div className="segmented" role="group" aria-label="Music source">
@@ -347,9 +349,9 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
           {touched && !musicReady && <p className="notice error">Add a song — an audio file or a link.</p>}
         </section>
 
-        <section className={s.block}>
+        <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}>04</span>
+            <span className={s.num}><Icon name="mic" size={18} /></span>
             <h2>A voice note <em>(optional)</em></h2>
           </header>
           <Recorder value={narration} onChange={setNarration} />
@@ -357,8 +359,11 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
       </div>
 
       <aside className={s.summary}>
-        <div className={s.summaryInner}>
-          <p className="meta">Before it develops</p>
+        <div className={`glass ${s.summaryInner}`}>
+          <p className="meta">Your memory</p>
+          <div className={s.progress} aria-label={`${doneCount} of 3 required steps done`}>
+            <i style={{ width: `${(doneCount / 3) * 100}%` }} />
+          </div>
           <ul className={s.checklist}>
             <li data-ok={textReady}>{textReady ? `${words} words written` : "Words about the day"}</li>
             <li data-ok={readyPhotos.length > 0}>{readyPhotos.length ? `${readyPhotos.length} photograph${readyPhotos.length > 1 ? "s" : ""}` : "At least one photograph"}</li>
@@ -384,8 +389,8 @@ export function Composer({ config, initial }: { config: AppConfig; initial?: Ent
           {!config.persistent && <p className="notice">Storage on this deployment is temporary. Configure a database and Blob store to keep memories.</p>}
           {error && <p className="notice error" role="alert">{error}</p>}
 
-          <button type="button" className={`btn btn-primary ${s.develop}`} onClick={develop} disabled={Boolean(phase) || busyPhotos}>
-            {editing ? "Redevelop memory" : "Develop memory"}
+          <button type="button" className={`btn btn-primary ${s.develop} ${canDevelop ? s.ready : ""}`} onClick={develop} disabled={Boolean(phase) || busyPhotos}>
+            {editing ? "Redevelop memory" : canDevelop ? "Develop memory ✦" : `Develop memory · ${3 - doneCount} step${3 - doneCount === 1 ? "" : "s"} left`}
           </button>
           <p className={s.fine}>Your diary is private to this browser’s diary key.</p>
         </div>
@@ -410,7 +415,7 @@ function DropZone({ onFiles, accept, multiple, label, hint }: { onFiles: (f: Fil
       tabIndex={0}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && input.current?.click()}
     >
-      <span className={s.dropPlus} aria-hidden>+</span>
+      <span className={s.dropPlus}><Icon name="upload" size={20} /></span>
       <span>{label}</span>
       <span className="meta">{hint}</span>
       <input ref={input} type="file" accept={accept} multiple={multiple} hidden onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); e.target.value = ""; }} />
@@ -520,6 +525,7 @@ function Recorder({ value, onChange }: { value: Narration | null; onChange: (n: 
 function Darkroom({ step, progress, photos }: { step: string; progress: number; photos: string[] }) {
   return (
     <div className={s.darkroom} role="status" aria-live="polite">
+      <span className={s.aurora} aria-hidden />
       <div className={s.tray}>
         {photos.slice(0, 3).map((p, i) => (
           // eslint-disable-next-line @next/next/no-img-element
@@ -528,7 +534,7 @@ function Darkroom({ step, progress, photos }: { step: string; progress: number; 
       </div>
       <p className={s.darkStep}>{step}</p>
       <div className={s.darkBar}><i style={{ width: `${Math.round(progress * 100)}%` }} /></div>
-      <p className="meta">Developing under the safelight</p>
+      <p className="meta">Developing your memory</p>
     </div>
   );
 }
