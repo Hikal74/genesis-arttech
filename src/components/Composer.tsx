@@ -15,6 +15,7 @@ import { getAiStatus } from "@/lib/ai/engine";
 import { AiSwitch } from "./AiSwitch";
 import { setMascotContext } from "./CloudMascot";
 import { SongSearch } from "./SongSearch";
+import { VoiceInput } from "./VoiceInput";
 import { Icon } from "./Icon";
 import { MoodMeter } from "./MoodMeter";
 import { Waveform } from "./Waveform";
@@ -345,6 +346,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
             aria-label="What happened today, and how did it feel?"
             maxLength={8000}
           />
+          <VoiceInput onText={(said) => setText((t) => (t.trim() ? `${t.trimEnd()} ${said}` : said).slice(0, 8000))} />
           <div className={s.readingRow}>
             <span className={s.faceTag} title={face.reason}>
               <i style={{ fontFamily: face.family }}>Aa</i>
