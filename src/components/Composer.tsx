@@ -11,7 +11,7 @@ import { countMood } from "@/lib/analysis/mood";
 import { blendThemes } from "@/lib/engine/presets";
 import { faceFor } from "@/lib/engine/typeface";
 import { aiMusic, aiTitle, type TrackHit } from "@/lib/ai";
-import { getAiStatus } from "@/lib/ai/engine";
+import { autoStartAi, getAiStatus } from "@/lib/ai/engine";
 import { AiSwitch } from "./AiSwitch";
 import { setMascotContext } from "@/lib/client/mascot-context";
 import { SongSearch } from "./SongSearch";
@@ -111,6 +111,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
   const pickSong = useCallback(async (): Promise<{ title: string; artist: string; reason: string } | null> => {
     if (text.trim().length < 12) { setError("Write a little about the day first, so the AI knows what to pick."); return null; }
+    autoStartAi();
     setPicking(true);
     setError(null);
     try {
@@ -161,6 +162,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
   const suggestTitle = async () => {
     if (text.trim().length < 12) return setError("Write a little about the day first.");
+    autoStartAi();
     setNaming(true);
     try {
       setTitle((await aiTitle(text)).title);

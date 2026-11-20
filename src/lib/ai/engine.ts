@@ -19,6 +19,7 @@ export type AiStatus =
   | { state: "error"; message: string };
 
 const PREF_KEY = "felt:ai-model";
+const DECLINED_KEY = "felt:ai-declined";
 
 let status: AiStatus = { state: "off" };
 let engine: MLCEngineInterface | null = null;
@@ -71,7 +72,7 @@ export function startAi(choice: ModelChoice = savedModel() ?? "light"): Promise<
         set({ state: "loading", progress: r.progress, text: r.text.replace(/\[.*?\]\s*/g, "").slice(0, 140) });
       if (engine) await engine.unload().catch(() => {});
       engine = await webllm.CreateMLCEngine(modelId, { initProgressCallback });
-      try { localStorage.setItem(PREF_KEY, choice); } catch {}
+      try { localStorage.setItem(PREF_KEY, choice); localStorage.removeItem(DECLINED_KEY); } catch {}
       set({ state: "ready", model: choice });
       return engine;
     } catch (err) {
@@ -92,8 +93,23 @@ export function resumeAi() {
   if (choice) void startAi(choice);
 }
 
+/**
+ * Start WebLLM without a click (when Nimbus opens): light model, only on devices with WebGPU,
+ * not on mobile data / data saver, and never again after the visitor turned AI off.
+ */
+export function autoStartAi() {
+  if (typeof window === "undefined" || status.state !== "off") return;
+  try { if (localStorage.getItem(DECLINED_KEY) === "1") return; } catch {}
+  const c = (navigator as Navigator & { connection?: { saveData?: boolean; type?: string; effectiveType?: string } }).connection;
+  if (c?.saveData || c?.type === "cellular" || /(^|-)2g|3g/.test(c?.effectiveType ?? "")) return;
+  const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
+  const desktop = !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  // The 1.5B model talks far better; use it where it fits comfortably.
+  void startAi(savedModel() ?? (desktop && mem >= 8 ? "better" : "light"));
+}
+
 export function stopAi() {
-  try { localStorage.removeItem(PREF_KEY); } catch {}
+  try { localStorage.removeItem(PREF_KEY); localStorage.setItem(DECLINED_KEY, "1"); } catch {}
   void engine?.unload().catch(() => {});
   engine = null;
   set({ state: "off" });
@@ -114,7 +130,7 @@ export function complete(messages: ChatCompletionMessageParam[], opts: { maxToke
       });
       return res.choices[0]?.message?.content?.trim() || null;
     } catch (err) {
-      console.error("[ai]", err);
+      console.error("[ai]", err instanceof Error ? err.message : String(err));
       return null;
     }
   };
