@@ -9,7 +9,7 @@
 .block > :global(.segmented) { justify-self: start; }
 .blockHead { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
 .blockHead { padding-top: var(--s-3); }
-.blockHead h2 { margin: 0; font-weight: 500; font-size: clamp(1.4rem, 2.3vw, 1.9rem); letter-spacing: -0.05em; line-height: 1; flex: 1; text-transform: lowercase; }
+.blockHead h2 { margin: 0; font-weight: 500; font-size: clamp(1.2rem, 1.98vw, 1.63rem); letter-spacing: -0.05em; line-height: 1; flex: 1; text-transform: lowercase; }
 .blockHead h2 em { font-style: normal; font-weight: 500; color: var(--paper-faint); }
 .num { width: 30px; height: 30px; border-radius: 2.5px; display: grid; place-items: center; color: var(--accent-ink); background: var(--accent); }
 
@@ -19,7 +19,7 @@
 .textarea {
   width: 100%; min-height: 260px; resize: vertical; padding: var(--s-5);
   background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding-left: 0; padding-right: 0;
-  font-size: clamp(1.05rem, 1.4vw, 1.18rem); line-height: 1.65; color: var(--paper);
+  font-size: clamp(0.9rem, 1.2vw, 1.01rem); line-height: 1.65; color: var(--paper);
   transition: border-color var(--d-fast), box-shadow var(--d-mid);
 }
 .textarea:focus { outline: none; border-color: var(--accent); }
@@ -120,7 +120,7 @@
 .tray img:nth-child(2) { transform: rotate(5deg) translate(6%, 4%); }
 .tray img:nth-child(3) { transform: rotate(-6deg) translate(-6%, 6%); }
 @keyframes develop { from { opacity: 0.15; filter: blur(14px) brightness(0.5) saturate(0.4); } to { opacity: 1; filter: none; } }
-.darkStep { margin: 0; font-weight: 500; font-size: clamp(1.25rem, 2.6vw, 1.75rem); letter-spacing: -0.03em; text-align: center; }
+.darkStep { margin: 0; font-weight: 500; font-size: clamp(1.07rem, 2.24vw, 1.5rem); letter-spacing: -0.03em; text-align: center; }
 .darkBar { width: min(320px, 76vw); height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
 .darkBar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width 600ms var(--ease-out); }
 

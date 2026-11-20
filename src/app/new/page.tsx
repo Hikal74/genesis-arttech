@@ -12,7 +12,7 @@ export default async function NewPage({ searchParams }: { searchParams: Promise<
     <main className="wrap" style={{ paddingTop: "var(--s-7)", paddingBottom: "var(--s-10)" }}>
       <header style={{ marginBottom: "var(--s-8)", maxWidth: 1000 }}>
         <p className="meta section-label" style={{ marginBottom: "var(--s-4)" }}>a new day</p>
-        <h1 className="display" style={{ fontSize: "clamp(3rem, 9vw, 8rem)" }}>
+        <h1 className="display" style={{ fontSize: "clamp(2.58rem, 7.74vw, 6.88rem)" }}>
           How did today <em>feel?</em>
         </h1>
         <p className="lede" style={{ marginTop: "var(--s-5)" }}>

@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { countMood } from "@/lib/analysis/mood";
-import { aiChat } from "@/lib/ai";
+import { getMascotContext as getContext } from "@/lib/client/mascot-context";
 import { AiSwitch } from "./AiSwitch";
 import { NimbusCloud } from "./NimbusCloud";
 import s from "./CloudMascot.module.css";
@@ -35,11 +35,6 @@ const PHRASES = [
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-/** Share what the user is writing with the mascot (Composer calls this). */
-export function setMascotContext(text: string) {
-  if (typeof window !== "undefined") (window as unknown as { __feltContext?: string }).__feltContext = text;
-}
-const getContext = () => (typeof window !== "undefined" ? (window as unknown as { __feltContext?: string }).__feltContext : undefined);
 
 export function CloudMascot() {
   const [open, setOpen] = useState(false);
@@ -148,6 +143,7 @@ export function CloudMascot() {
     if (!preset) setDraft("");
     setBusy(true);
     try {
+      const { aiChat } = await import("@/lib/ai");
       const { reply } = await aiChat(next.slice(1).slice(-20), getContext()?.slice(0, 4000) || undefined);
       setMsgs((m) => [...m, { role: "assistant", content: reply }]);
     } catch {

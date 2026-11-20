@@ -7,13 +7,13 @@
 }
 .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(24px, 4vw, 64px); align-items: center; min-height: min(78svh, 760px); }
 .copy { display: grid; gap: var(--s-5); align-content: center; }
-.title { font-size: clamp(3.2rem, 9vw, 8.4rem); }
+.title { font-size: clamp(2.75rem, 7.74vw, 7.22rem); }
 .title em { background: var(--accent); }
-.sub { margin: 0; font-size: clamp(1.2rem, 2vw, 1.6rem); letter-spacing: -0.04em; color: var(--paper-2); }
+.sub { margin: 0; font-size: clamp(1.03rem, 1.72vw, 1.38rem); letter-spacing: -0.04em; color: var(--paper-2); }
 
 .field textarea {
   width: 100%; resize: none; padding: 14px 0; border: 0; border-bottom: 1px solid var(--line-strong); background: transparent;
-  font-size: clamp(1.3rem, 2.4vw, 2rem); line-height: 1.25; letter-spacing: -0.04em; color: var(--paper);
+  font-size: clamp(1.12rem, 2.06vw, 1.72rem); line-height: 1.25; letter-spacing: -0.04em; color: var(--paper);
   transition: border-color 0.3s;
 }
 .field textarea:focus { outline: none; border-color: var(--accent); }
@@ -29,7 +29,7 @@
 .readout span + span::before { content: "·"; margin-right: 14px; }
 
 .moods { list-style: none; margin: var(--s-7) 0 0; padding: 0 var(--gutter); display: flex; flex-wrap: wrap; justify-content: center; gap: 0 clamp(16px, 3vw, 44px); }
-.moods li { position: relative; font-size: clamp(2.4rem, 7vw, 6.4rem); line-height: 1; letter-spacing: -0.06em; color: rgba(255, 255, 255, 0.12); transition: color 0.8s ease; }
+.moods li { position: relative; font-size: clamp(2.06rem, 6.02vw, 5.5rem); line-height: 1; letter-spacing: -0.06em; color: rgba(255, 255, 255, 0.12); transition: color 0.8s ease; }
 .moods li[data-on="true"] { color: var(--accent); }
 .dot { position: absolute; top: 0.18em; right: -0.22em; width: 0.16em; height: 0.16em; border-radius: 50%; background: var(--accent); }
 

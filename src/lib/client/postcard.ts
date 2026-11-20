@@ -5,6 +5,13 @@ import { MOOD } from "../moods";
 import { countMood } from "../analysis/mood";
 
 const W = 1080;
+
+/** Self-hosted font stacks, read from the page's CSS variables so the canvas uses the same faces. */
+export function F() {
+  const css = getComputedStyle(document.documentElement);
+  const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
+  return { sans: v("--font-sans", "system-ui, sans-serif"), serif: v("--font-serif", "Georgia, serif"), mono: v("--font-mono", "monospace"), expressive: v("--font-expressive", "system-ui, sans-serif") };
+}
 export type CardFormat = "post" | "story";
 /** post = 4:5 feed image · story = 9:16 with Instagram's top/bottom UI zones kept clear */
 const LAYOUT = {
@@ -96,7 +103,7 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
   // date + mood
   let y = top + photoH + 92;
   ctx.fillStyle = p.muted;
-  ctx.font = '500 26px "JetBrains Mono", ui-monospace, monospace';
+  ctx.font = `500 26px ${F().mono}`;
   const date = new Date(`${entry.day}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }).toUpperCase();
   ctx.fillText(date, pad, y);
   ctx.fillStyle = mood.color;
@@ -109,7 +116,7 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
   // title
   y += 34;
   ctx.fillStyle = p.ink;
-  ctx.font = '300 84px "Fraunces", Georgia, serif';
+  ctx.font = `300 84px ${F().serif}`;
   for (const line of wrap(ctx, entry.title, W - pad * 2, L.titleLines)) {
     y += 86;
     ctx.fillText(line, pad, y);
@@ -117,7 +124,7 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
 
   // atmosphere line
   ctx.fillStyle = p.muted;
-  ctx.font = 'italic 300 34px "Fraunces", Georgia, serif';
+  ctx.font = `italic 300 34px ${F().serif}`;
   for (const line of wrap(ctx, entry.analysis.atmosphereLine, W - pad * 2, 2)) {
     y += 46;
     ctx.fillText(line, pad, y);
@@ -125,11 +132,11 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
 
   // song + mark
   const song = entry.music.kind === "file" ? entry.music.name : [entry.music.title, entry.music.artist].filter(Boolean).join(" — ");
-  ctx.font = '500 28px "Inter Tight", system-ui, sans-serif';
+  ctx.font = `500 28px ${F().sans}`;
   ctx.fillStyle = p.accent;
   if (song) ctx.fillText(`♪  ${song}`.slice(0, 60), pad, H - L.bottom);
   ctx.fillStyle = p.muted;
-  ctx.font = '600 30px "Bricolage Grotesque", "Inter Tight", sans-serif';
+  ctx.font = `600 30px ${F().expressive}`;
   const mark = "felt";
   ctx.fillText(mark, W - pad - ctx.measureText(mark).width, H - L.bottom);
 

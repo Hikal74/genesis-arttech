@@ -22,7 +22,7 @@ export default async function YearPage({ searchParams }: { searchParams: Promise
     <main className="wrap" style={{ paddingTop: "var(--s-7)", paddingBottom: "var(--s-9)" }}>
       <header style={{ marginBottom: "var(--s-6)" }}>
         <p className="meta section-label" style={{ marginBottom: "var(--s-4)" }}>year in felt</p>
-        <h1 className="display" style={{ fontSize: "clamp(3rem, 8vw, 7rem)" }}>
+        <h1 className="display" style={{ fontSize: "clamp(2.58rem, 6.88vw, 6.02rem)" }}>
           {year}, <em>felt.</em>
         </h1>
       </header>
