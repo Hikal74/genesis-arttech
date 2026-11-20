@@ -220,7 +220,11 @@ export type EntrySummary = Pick<
   song: string;
   photoCount: number;
   keywords: string;
+  /** Mood of the day's words (missing on entries saved before it existed — filled in on read). */
+  mood?: DayMood;
 };
+
+export type DayMood = "radiant" | "bright" | "calm" | "mixed" | "low" | "stormy" | "blank";
 
 /** A real track from the song search (Spotify, or the public iTunes catalogue as a fallback). */
 export interface TrackHit {

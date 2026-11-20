@@ -31,3 +31,10 @@
   .month { grid-template-columns: 1fr; }
   .monthTitle { position: static; flex-direction: row; align-items: baseline; gap: 10px; }
 }
+
+.moods { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
+.moodChip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 2.5px; border: 1px solid var(--line); background: transparent; color: var(--paper-2); font: inherit; font-size: 0.8rem; cursor: pointer; transition: border-color var(--d-fast), background var(--d-fast); }
+.moodChip i { width: 9px; height: 9px; border-radius: 2px; background: var(--chip); }
+.moodChip:hover { border-color: var(--line-strong); color: var(--paper); }
+.moodChip[aria-pressed="true"] { border-color: var(--chip); background: color-mix(in srgb, var(--chip) 16%, transparent); color: var(--paper); }
+.calendar { margin-bottom: var(--s-8); }
