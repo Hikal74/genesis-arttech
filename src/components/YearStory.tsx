@@ -3,7 +3,9 @@
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { shareYear } from "@/lib/client/year-card";
 import { MOOD } from "@/lib/moods";
+import { StoryButton } from "./StoryButton";
 import type { YearStats } from "@/lib/year";
 import s from "./YearStory.module.css";
 
@@ -189,6 +191,7 @@ export function YearStory({ stats, years }: { stats: YearStats; years: number[] 
         <button type="button" className={s.next} onClick={() => go(1)} aria-label="Next" disabled={i === slides.length - 1} />
         <p className={s.count} aria-live="polite">{i + 1} / {slides.length}</p>
       </div>
+      <StoryButton make={() => shareYear(stats)} label={stats.demo ? "Preview as Instagram Story" : "Share my year to Instagram"} />
     </div>
   );
 }

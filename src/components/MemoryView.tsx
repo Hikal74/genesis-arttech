@@ -12,6 +12,7 @@ import { Photo } from "./Photo";
 import { Waveform } from "./Waveform";
 import { Explain } from "./Explain";
 import { sharePostcard } from "@/lib/client/postcard";
+import { StoryButton } from "./StoryButton";
 import s from "./Memory.module.css";
 
 type Analyser = { ctx: AudioContext; node: AnalyserNode; buf: Uint8Array<ArrayBuffer> };
@@ -518,6 +519,7 @@ function Actions({ entry, own }: { entry: Entry; own: boolean }) {
       <div className={s.actionRow}>
         <Link href="/archive" className="btn btn-small">← Archive</Link>
         <button className="btn btn-small btn-light" onClick={postcard} disabled={card === "drawing"}>{card === "drawing" ? "Drawing postcard…" : card === "done" ? "Postcard saved ✓" : "Postcard"}</button>
+        <StoryButton make={() => sharePostcard(entry, "story")} />
         <a href={`/api/memories/${entry.id}/folder`} className="btn btn-small" download>Download day folder</a>
         {own && <Link href={`/m/${entry.id}/edit`} className="btn btn-small">Edit &amp; redevelop</Link>}
         {own && <button className="btn btn-small" onClick={() => setRenaming((v) => !v)}>Rename</button>}
