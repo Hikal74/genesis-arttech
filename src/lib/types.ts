@@ -221,3 +221,21 @@ export type EntrySummary = Pick<
   photoCount: number;
   keywords: string;
 };
+
+/** A real track from the song search (Spotify, or the public iTunes catalogue as a fallback). */
+export interface TrackHit {
+  id: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  image: string | null;
+  /** Link stored with the memory (Spotify track, or Apple Music in the fallback). */
+  url: string;
+  embedUrl: string | null;
+  /** Always a Spotify page: the track itself, or a Spotify search for it. */
+  spotifyUrl: string;
+  previewUrl: string | null;
+  durationMs: number | null;
+  explicit: boolean;
+  source: "spotify" | "itunes";
+}

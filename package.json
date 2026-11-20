@@ -13,6 +13,7 @@
     "node": ">=22.6"
   },
   "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.87",
     "@vercel/blob": "^2.9.0",
     "jpeg-js": "^0.4.4",
     "motion": "^14.14.0",
