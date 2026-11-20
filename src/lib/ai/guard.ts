@@ -12,7 +12,7 @@ const EXTRACTION = [
   /\b(developer|dev|god|debug|admin|maintenance|sudo|jailbreak|dan)\s+mode\b/i,
   /\bdo anything now\b/i,
   /\b(api|secret|private|access)\s*[-_ ]?(key|token)s?\b/i,
-  /\b(env(ironment)?\s+variables?|process\.env|\.env\b|BLOB_READ_WRITE|XAI_API|ANTHROPIC_API)/i,
+  /\b(env(ironment)?\s+variables?|process\.env|\.env\b|BLOB_READ_WRITE|_API_KEY)/i,
   /\b(show|give|send|print|reveal|share|paste|leak)\s+(me\s+)?(your|the|felt'?s|nimbus'?s|this\s+(app|site)'?s?)\s+(source\s+)?code\b/i,
   /\b(codebase|source\s+code\s+of\s+(felt|nimbus|this))\b/i,
   // Russian
@@ -32,11 +32,11 @@ export function looksLikeExtraction(text: string): boolean {
 /* ---------- 2. every reply is scrubbed on the way out ---------- */
 
 const SECRET_SHAPES = [
-  /xai-[A-Za-z0-9]{20,}/,
+  /[a-z]+-[A-Za-z0-9]{32,}/,
   /sk-(ant-)?[A-Za-z0-9_-]{20,}/,
   /vercel_blob_rw_[A-Za-z0-9_]+/i,
   /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/, // JWT-like
-  /\b(BLOB_READ_WRITE_TOKEN|XAI_API_KEY|ANTHROPIC_API_KEY|DATABASE_URL)\b/,
+  /\b(BLOB_READ_WRITE_TOKEN|[A-Z]+_API_KEY|DATABASE_URL)\b/,
   /postgres(ql)?:\/\/\S+/i,
   /```/, // code blocks never belong in Nimbus' answers
   /\bsrc\/(lib|app|components)\//,
