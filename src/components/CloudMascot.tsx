@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useAnimationControls } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { countMood } from "@/lib/analysis/mood";
 import { getMascotContext as getContext } from "@/lib/client/mascot-context";
+import { autoStartAi } from "@/lib/ai/engine";
 import { AiSwitch } from "./AiSwitch";
 import { NimbusCloud } from "./NimbusCloud";
 import s from "./CloudMascot.module.css";
@@ -38,6 +39,8 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 export function CloudMascot() {
   const [open, setOpen] = useState(false);
+  // Opening the chat wakes the on-device model (WebLLM) — downloaded once, then cached.
+  useEffect(() => { if (open) autoStartAi(); }, [open]);
   const [bubble, setBubble] = useState<string | null>(null);
   const [quiet, setQuiet] = useState(() => {
     try { return typeof window !== "undefined" && localStorage.getItem("felt:nimbus-quiet") === "1"; } catch { return false; }

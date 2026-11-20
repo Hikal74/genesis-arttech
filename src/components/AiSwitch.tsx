@@ -30,7 +30,7 @@ export function AiSwitch({ compact = false }: { compact?: boolean }) {
     return (
       <div className={s.box} data-compact={compact || undefined}>
         <div className={s.bar}><i style={{ width: `${Math.round(status.progress * 100)}%` }} /></div>
-        <span className={s.text}>{Math.round(status.progress * 100)}% · {status.text || "downloading the model to this device…"}</span>
+        <span className={s.text}>waking up the on-device AI · {Math.round(status.progress * 100)}% · one-time download, cached after this</span>
       </div>
     );
   }
