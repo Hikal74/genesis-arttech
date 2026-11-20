@@ -13,7 +13,7 @@ import { faceFor } from "@/lib/engine/typeface";
 import { aiMusic, aiTitle, type TrackHit } from "@/lib/ai";
 import { getAiStatus } from "@/lib/ai/engine";
 import { AiSwitch } from "./AiSwitch";
-import { setMascotContext } from "./CloudMascot";
+import { setMascotContext } from "@/lib/client/mascot-context";
 import { SongSearch } from "./SongSearch";
 import { VoiceInput } from "./VoiceInput";
 import { Icon } from "./Icon";

@@ -1,6 +1,5 @@
 "use client";
 
-import { z } from "zod/v4";
 import type { TrackHit } from "../types";
 import { analyzeTextLocally } from "../analysis/text";
 import { countMood } from "../analysis/mood";
@@ -20,12 +19,12 @@ export async function searchSongs(q: string, limit = 8, signal?: AbortSignal): P
   return json;
 }
 
-function parseJson<T>(raw: string | null, schema: z.ZodType<T>): T | null {
+function parseJson(raw: string | null): Record<string, unknown> | null {
   const m = raw?.match(/\{[\s\S]*\}/);
   if (!m) return null;
   try {
-    const r = schema.safeParse(JSON.parse(m[0]));
-    return r.success ? r.data : null;
+    const v = JSON.parse(m[0]);
+    return v && typeof v === "object" ? v : null;
   } catch {
     return null;
   }
@@ -45,16 +44,20 @@ export async function aiTitle(text: string): Promise<{ title: string; source: So
 
 /* ---------- music: the model proposes, the song search confirms it is real ---------- */
 
-const Song = z.object({
-  title: z.string().min(1).max(120),
-  artist: z.string().min(1).max(120),
-  bpm: z.coerce.number().min(40).max(220).catch(90),
-  energy: z.coerce.number().min(0).max(1).catch(0.5),
-  mode: z.enum(["major", "minor"]).catch("major"),
-  reason: z.string().max(300).catch(""),
-});
-type SongIdea = z.infer<typeof Song>;
+interface SongIdea { title: string; artist: string; bpm: number; energy: number; mode: "major" | "minor"; reason: string }
 export type SongPick = SongIdea & { track: TrackHit | null; source: Source };
+
+const str = (v: unknown, max: number) => (typeof v === "string" && v.trim() && v.length <= max ? v.trim() : null);
+const num = (v: unknown, lo: number, hi: number, d: number) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= lo && n <= hi ? n : d;
+};
+function toSong(o: Record<string, unknown> | null): SongIdea | null {
+  if (!o) return null;
+  const title = str(o.title, 120), artist = str(o.artist, 120);
+  if (!title || !artist) return null;
+  return { title, artist, bpm: num(o.bpm, 40, 220, 90), energy: num(o.energy, 0, 1, 0.5), mode: o.mode === "minor" ? "minor" : "major", reason: str(o.reason, 300) ?? "" };
+}
 
 const LOCAL_SONGS: Record<string, SongIdea[]> = {
   radiant: [
@@ -105,7 +108,7 @@ export async function aiMusic(text: string, wish?: string, avoid: string[] = [])
   for (let attempt = 0; attempt < 2; attempt++) {
     const out = await complete([{ role: "system", content: MUSIC_SYSTEM }, { role: "user", content }], { maxTokens: 200, temperature: 0.8 + attempt * 0.2, json: true });
     if (!out) break;
-    const song = parseJson(out, Song);
+    const song = toSong(parseJson(out));
     if (!song || ![song.title, song.artist, song.reason].every((v) => !v || scrubReply(v, 300) === v.trim())) continue;
     const track = await findTrack(song);
     if (track && !track.explicit) return { ...song, title: track.title, artist: track.artist, track, source: "ai" };
