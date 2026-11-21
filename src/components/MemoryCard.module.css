@@ -4,15 +4,15 @@
   flex-direction: column;
   background: var(--c-ground);
   color: var(--c-ink);
-  border-radius: 4px;
+  border-radius: 12px;
   overflow: hidden;
   isolation: isolate;
   transition: transform 600ms var(--ease-spring), box-shadow var(--d-mid) var(--ease-out);
-  box-shadow: 0 0 0 1px rgba(31, 29, 26, 0.1), 0 2px 0 rgba(31, 29, 26, 0.12);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 6px 16px -8px rgba(0, 0, 0, 0.2);
 }
 .card::after { display: none; }
 .card:hover::after { background-position: -50% 0; }
-.card:hover { transform: translateY(-4px) rotate(-0.6deg); box-shadow: 0 0 0 1px rgba(31, 29, 26, 0.3), 5px 5px 0 rgba(31, 29, 26, 0.85); }
+.card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 18px 36px -16px rgba(0, 0, 0, 0.35); }
 .card:focus-visible { outline-color: var(--c-accent); }
 
 .plate { position: relative; aspect-ratio: 4 / 3.3; overflow: hidden; }

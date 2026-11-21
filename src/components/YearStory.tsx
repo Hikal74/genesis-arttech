@@ -20,7 +20,7 @@ function slidesFor(st: YearStats): Slide[] {
   const out: Slide[] = [
     {
       key: "intro",
-      bg: "#ECE6D9",
+      bg: "#F2F2EF",
       body: (
         <>
           <p className={s.kicker}>{st.demo ? "a preview with the demonstration days" : `your ${st.year}`}</p>

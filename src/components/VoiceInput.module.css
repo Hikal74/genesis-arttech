@@ -6,8 +6,8 @@
 .mic[data-on] .dot { background: var(--danger); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { transform: scale(1.5); opacity: 0.5; } }
 .langs { display: inline-flex; gap: 2px; }
-.langs button { padding: 4px 7px; border: 0; border-radius: 2px; background: transparent; color: var(--paper-faint); font-family: var(--font-mono); font-size: 0.7rem; cursor: pointer; }
-.langs button[aria-pressed="true"] { color: var(--paper); background: rgba(31, 29, 26, 0.08); }
-.interim { flex-basis: 100%; margin: 0; font-size: 0.88rem; color: var(--paper-dim); font-style: italic; }
+.langs button { padding: 4px 7px; border: 0; border-radius: 2px; background: transparent; color: var(--paper-faint); font-family: var(--font-ui); font-size: 0.7rem; cursor: pointer; }
+.langs button[aria-pressed="true"] { color: var(--paper); background: rgba(22, 22, 22, 0.08); }
+.interim { flex-basis: 100%; margin: 0; font-size: 0.88rem; color: var(--paper-dim); }
 .err { flex-basis: 100%; margin: 0; font-size: 0.82rem; color: var(--danger); }
 @media (prefers-reduced-motion: reduce) { .mic[data-on] .dot { animation: none; } }

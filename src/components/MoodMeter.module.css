@@ -2,7 +2,7 @@
 .head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: center; }
 .read { display: grid; gap: 4px; min-width: 0; }
 .kicker { font-size: 0.72rem; letter-spacing: 0.02em; color: var(--paper-dim); }
-.word { display: block; font-family: var(--font-serif); font-size: 2rem; font-weight: 380; line-height: 1; letter-spacing: -0.02em; color: var(--paper); }
+.word { display: block; font-family: var(--font-ui); font-size: 2rem; font-weight: 380; line-height: 1; letter-spacing: -0.02em; color: var(--paper); }
 
 .balance { margin-top: 10px; display: grid; gap: 6px; }
 .track {
@@ -31,6 +31,6 @@
 .theme { display: grid; gap: 8px; }
 .swatches { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .swatch { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; color: var(--paper-2); }
-.swatch i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(31, 29, 26, 0.15), 0 0 10px rgba(31, 29, 26, 0.08); }
+.swatch i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(22, 22, 22, 0.15), 0 0 10px rgba(22, 22, 22, 0.08); }
 .swatch b { font-weight: 400; color: var(--paper-faint); font-variant-numeric: tabular-nums; }
 .waiting { font-size: 0.82rem; color: var(--paper-faint); }
