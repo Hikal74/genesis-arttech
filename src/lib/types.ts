@@ -88,6 +88,8 @@ export type MusicInput =
       artist: string | null;
       thumbnail: string | null;
       feel: MusicFeel | null;
+      /** Measured in the browser from the song's official 30-second preview (never stored). */
+      analysis?: AudioAnalysis | null;
     };
 
 export interface MediaRef {
@@ -106,7 +108,7 @@ export interface PhotoInput {
 }
 
 export interface MusicProfile {
-  origin: "audio-analysis" | "creator-tapped" | "default";
+  origin: "audio-analysis" | "preview-analysis" | "creator-tapped" | "default";
   bpm: number;
   energy: number;
   brightness: number;

@@ -12,7 +12,7 @@ import { blendThemes } from "@/lib/engine/presets";
 import { faceFor } from "@/lib/engine/typeface";
 import { aiMusic, aiTitle, type TrackHit } from "@/lib/ai";
 import { autoStartAi, getAiStatus } from "@/lib/ai/engine";
-import { AiSwitch } from "./AiSwitch";
+import { AiSwitch, useAiStatus } from "./AiSwitch";
 import { setMascotContext } from "@/lib/client/mascot-context";
 import { SongSearch } from "./SongSearch";
 import { VoiceInput } from "./VoiceInput";
@@ -33,7 +33,7 @@ type PhotoItem = {
 
 type FileMusic = { kind: "file"; name: string; file?: File; media?: MediaRef; preview: string; analysis?: AudioAnalysis; status: "processing" | "ready" | "error"; error?: string };
 type LinkPreview = { provider: keyof typeof PROVIDER_LABEL; embedUrl: string | null; title: string | null; artist: string | null; thumbnail: string | null; url: string };
-type LinkMusic = { kind: "link"; url: string; reason?: string; trackId?: string; spotifyUrl?: string; preview: LinkPreview | null; status: "idle" | "loading" | "ready" | "error"; error?: string; feel: MusicFeel };
+type LinkMusic = { kind: "link"; url: string; reason?: string; pickedBy?: "ai" | "local"; trackId?: string; spotifyUrl?: string; analysis?: AudioAnalysis; measuring?: boolean; preview: LinkPreview | null; status: "idle" | "loading" | "ready" | "error"; error?: string; feel: MusicFeel };
 type Narration = { blob?: Blob; media?: MediaRef; url: string };
 
 const AUDIO_TYPES: Record<string, string> = { mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg", oga: "audio/ogg", webm: "audio/webm", flac: "audio/flac" };
@@ -103,13 +103,28 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
   const [naming, setNaming] = useState(false);
 
   const [picked, setPicked] = useState<string[]>([]);
+  const aiReady = useAiStatus().state === "ready";
 
-  const applyTrack = useCallback((tr: TrackHit, extra?: { reason?: string; feel?: MusicFeel }) => {
+  const applyTrack = useCallback((tr: TrackHit, extra?: { reason?: string; feel?: MusicFeel; pickedBy?: "ai" | "local" }) => {
     setMusic({
-      kind: "link", url: tr.url, status: "ready", reason: extra?.reason, trackId: tr.id, spotifyUrl: tr.spotifyUrl,
+      kind: "link", url: tr.url, status: "ready", reason: extra?.reason, pickedBy: extra?.pickedBy, trackId: tr.id, spotifyUrl: tr.spotifyUrl,
       preview: { provider: tr.source === "spotify" ? "spotify" : "apple", embedUrl: tr.embedUrl, title: tr.title, artist: tr.artist, thumbnail: tr.image, url: tr.url },
       feel: extra?.feel ?? { bpm: null, energy: 0.5, mode: "unknown" },
+      measuring: Boolean(tr.previewUrl),
     });
+    if (!tr.previewUrl) return;
+    // Listen to the official 30-second preview in the browser: real tempo, key and energy shape the memory.
+    // The preview is only analysed here — it is never stored or re-shared.
+    void (async () => {
+      let analysis: AudioAnalysis | undefined;
+      try {
+        const res = await fetch(tr.previewUrl!);
+        if (res.ok) analysis = await analyzeAudioFile(new File([await res.blob()], "preview.m4a", { type: res.headers.get("content-type") ?? "audio/mp4" }));
+      } catch {}
+      setMusic((m) => (m?.kind === "link" && m.trackId === tr.id
+        ? { ...m, measuring: false, analysis, feel: analysis ? { bpm: analysis.bpm, energy: analysis.energy, mode: analysis.mode } : m.feel }
+        : m));
+    })();
   }, []);
 
   const pickSong = useCallback(async (): Promise<{ title: string; artist: string; reason: string } | null> => {
@@ -122,7 +137,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
       setPicked((p) => [...p, `${song.title} — ${song.artist}`]);
       setMusicTab("ai");
       const feel: MusicFeel = { bpm: Math.round(song.bpm), energy: song.energy, mode: song.mode };
-      if (song.track) applyTrack(song.track, { reason: song.reason, feel });
+      if (song.track) applyTrack(song.track, { reason: song.reason, feel, pickedBy: song.source });
       else {
         const url = `https://open.spotify.com/search/${encodeURIComponent(`${song.title} ${song.artist}`)}`;
         setMusic({ kind: "link", url: "", status: "error", error: "That song could not be found in the catalogue — try again or search.", reason: song.reason, spotifyUrl: url, preview: null, feel });
@@ -136,25 +151,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
       setPicking(false);
     }
   }, [text, wish, picked, applyTrack]);
-
-  // Chat actions: "use this title" and "pick a song" act on this form.
-  useEffect(() => {
-    const w = window as unknown as { __feltComposer?: boolean };
-    w.__feltComposer = true;
-    const useTitle = (e: Event) => setTitle((e as CustomEvent<string>).detail.slice(0, 80));
-    const pick = async () => {
-      const song = await pickSong();
-      window.dispatchEvent(new CustomEvent("felt:song-picked", { detail: song }));
-      if (song) document.getElementById("song-of-the-day")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    };
-    window.addEventListener("felt:use-title", useTitle);
-    window.addEventListener("felt:pick-song", pick);
-    return () => {
-      w.__feltComposer = false;
-      window.removeEventListener("felt:use-title", useTitle);
-      window.removeEventListener("felt:pick-song", pick);
-    };
-  }, [pickSong]);
 
   // "Choose for me": pick once the day has enough words and no song is set yet.
   useEffect(() => {
@@ -288,7 +284,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
         }
         musicBody = { kind: "file", media: { key: media.key, contentType: media.contentType, size: media.size }, name: music.name, analysis: music.analysis };
       } else {
-        musicBody = { kind: "link", url: music.preview?.url ?? music.url, title: music.preview?.title ?? null, artist: music.preview?.artist ?? null, feel: music.feel.bpm || music.feel.mode !== "unknown" ? music.feel : null };
+        musicBody = { kind: "link", url: music.preview?.url ?? music.url, title: music.preview?.title ?? null, artist: music.preview?.artist ?? null, feel: music.feel.bpm || music.feel.mode !== "unknown" ? music.feel : null, analysis: music.analysis ?? null };
       }
 
       let narrationBody: unknown = null;
@@ -412,8 +408,8 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
             <h2>The song of the day</h2>
           </header>
           <div className="segmented" role="group" aria-label="Music source">
-            <button type="button" aria-pressed={musicTab === "ai"} onClick={() => setMusicTab("ai")}>✦ AI pick</button>
-            <button type="button" aria-pressed={musicTab === "spotify"} onClick={() => setMusicTab("spotify")}>Spotify</button>
+            <button type="button" aria-pressed={musicTab === "ai"} onClick={() => setMusicTab("ai")}>✦ Pick for me</button>
+            <button type="button" aria-pressed={musicTab === "spotify"} onClick={() => setMusicTab("spotify")}>Search songs</button>
             <button type="button" aria-pressed={musicTab === "file"} onClick={() => setMusicTab("file")}>Audio file</button>
             <button type="button" aria-pressed={musicTab === "link"} onClick={() => { setMusicTab("link"); if (music?.kind !== "link" || music.reason || music.trackId) setMusic({ kind: "link", url: "", preview: null, status: "idle", feel: { bpm: null, energy: 0.5, mode: "unknown" } }); }}>
               Music link
@@ -426,7 +422,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
               <input className="input" value={wish} maxLength={300} onChange={(e) => setWish(e.target.value)} placeholder="Describe the music you want — e.g. “calm piano for a rainy evening” (optional)" aria-label="Describe the music you want" />
               <div className={s.aiRow}>
                 <button type="button" className="btn btn-primary btn-small" onClick={pickSong} disabled={picking}>
-                  {picking ? "Listening to your day…" : music?.kind === "link" && music.reason ? "Pick another" : "Let AI choose"}
+                  {picking ? "Listening to your day…" : music?.kind === "link" && music.reason ? "Pick another" : aiReady ? "Let AI choose" : "Pick from my mood"}
                 </button>
                 <label className={s.auto}>
                   <input type="checkbox" checked={autoMusic} onChange={(e) => setAutoMusic(e.target.checked)} /> choose automatically for me
@@ -443,7 +439,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
               {music?.kind === "link" && music.trackId && !music.reason && music.preview && (
                 <>
                   <TrackCard music={music} />
-                  <FeelControls feel={music.feel} onChange={(feel) => setMusic({ ...music, feel })} />
+                  {!music.analysis && !music.measuring && <FeelControls feel={music.feel} onChange={(feel) => setMusic({ ...music, feel })} />}
                 </>
               )}
             </div>
@@ -539,10 +535,10 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
               <span className="meta">Title</span>
               <button type="button" className={s.suggest} onClick={suggestTitle} disabled={naming}>{naming ? "naming…" : "✦ suggest"}</button>
             </span>
-            <input className="input" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder={editing && initial ? initial.title : "Leave empty — AI will name it for you"} />
+            <input className="input" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder={editing && initial ? initial.title : aiReady ? "Leave empty — AI will name it for you" : "Leave empty — Felt names it from your words"} />
           </label>
 
-          <p className={s.fine}>Photographs and music are analysed in your browser. AI runs on your own device after a one-time download — your words never leave the browser. Song searches go to Spotify.</p>
+          <p className={s.fine}>Photographs and music are analysed in your browser. When switched on, AI runs on your own device after a one-time download — your words never leave the browser. Song searches only send the search words to a music catalogue.</p>
 
           {!config.persistent && <p className="notice">Storage on this deployment is temporary. Connect a Vercel Blob store to keep memories.</p>}
           {error && <p className="notice error" role="alert">{error}</p>}
@@ -703,10 +699,14 @@ function TrackCard({ music }: { music: LinkMusic }) {
     <div className={s.linkCard}>
       {p.embedUrl && <iframe src={p.embedUrl} title="Song preview" className={s.embed} allow="autoplay; encrypted-media; clipboard-write" loading="lazy" />}
       <p className={s.songName}>{[p.title, p.artist].filter(Boolean).join(" — ")}</p>
-      {music.reason && <p className={s.fine}>{music.reason}</p>}
-      {music.reason && music.feel.bpm && (
-        <p className={s.stats}><span>{music.feel.bpm} bpm</span><span>{music.feel.mode === "major" ? "bright" : "shadowed"}</span><span>energy {Math.round(music.feel.energy * 100)}%</span></p>
-      )}
+      {music.reason && <p className={s.fine}>{music.pickedBy === "ai" ? "Chosen by the on-device AI: " : "Chosen from the mood of your words (AI is off): "}{music.reason}</p>}
+      {music.measuring ? (
+        <p className={s.fine}>Listening to the 30-second preview — measuring tempo, key and energy…</p>
+      ) : music.analysis ? (
+        <p className={s.stats}><span>{music.analysis.bpm} bpm</span><span>{music.analysis.key}</span><span>energy {Math.round(music.analysis.energy * 100)}%</span><span>measured from preview</span></p>
+      ) : music.reason && music.feel.bpm ? (
+        <p className={s.stats}><span>~{music.feel.bpm} bpm</span><span>{music.feel.mode === "major" ? "bright" : "shadowed"}</span><span>energy {Math.round(music.feel.energy * 100)}%</span><span>estimated</span></p>
+      ) : null}
       {music.spotifyUrl && <a className={s.fine} href={music.spotifyUrl} target="_blank" rel="noreferrer">Open in Spotify ↗</a>}
     </div>
   );

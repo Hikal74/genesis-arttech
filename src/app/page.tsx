@@ -103,7 +103,7 @@ export default async function Home() {
           <li className={s.step}>
             <span className={s.stepNum}>03</span>
             <h3>Pick the song</h3>
-            <p>Search Spotify, upload a track or let AI choose. Its tempo times every cut and pulse.</p>
+            <p>Search for a song, upload a track or let Felt pick one. Its measured tempo and key time every cut and pulse.</p>
             <div className={s.demoBox}>
               <Equalizer bpm={sample?.musicProfile.bpm ?? 96} />
               <span className="meta">{sample ? `${sample.musicProfile.bpm} bpm · ${sample.musicProfile.key ?? sample.musicProfile.mode}` : "tempo · energy · key"}</span>

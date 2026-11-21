@@ -396,7 +396,7 @@ function MusicBlock({ entry, audio }: { entry: Entry; audio: Audio }) {
       <div className={s.linkMeta}>
         <p className={s.songName}>{[m.title, m.artist].filter(Boolean).join(" — ") || "Linked song"}</p>
         <p className={s.musicStats}>
-          <span>{prof.bpm} bpm ({prof.origin === "creator-tapped" ? "tapped" : "assumed"})</span>
+          <span>{prof.bpm} bpm ({prof.origin === "preview-analysis" ? "measured from preview" : prof.origin === "creator-tapped" ? "tapped" : "assumed"})</span>
           {prof.mode !== "unknown" && <span>{prof.mode}</span>}
           {prof.genre && <span>{prof.genre}</span>}
         </p>
