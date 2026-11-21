@@ -20,7 +20,7 @@ export interface PreparedPhoto {
   analysis: ImageAnalysis;
 }
 
-const MAX_SIDE = 1800;
+const MAX_SIDE = 2400;
 const DIRECT_LIMIT = 4 * 1024 * 1024;
 
 async function decodeImage(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
@@ -59,8 +59,10 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(source, 0, 0, width, height);
-  const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("Could not encode image"))), "image/jpeg", 0.86));
+  const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("Could not encode image"))), "image/jpeg", 0.9));
 
   const small = document.createElement("canvas");
   const s = Math.min(1, 128 / Math.max(width, height));

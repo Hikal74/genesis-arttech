@@ -47,22 +47,22 @@
 .playIcon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--m-accent); color: var(--m-ground); font-size: 0.7rem; animation: beat var(--m-beat) var(--m-ease) infinite; }
 .soundToggle { padding: 13px 20px; border-radius: 4px; border: 1px solid color-mix(in srgb, var(--m-ink) 22%, transparent); background: color-mix(in srgb, var(--m-surface) 78%, transparent); font-size: 0.92rem; font-weight: 500; transition: background var(--d-fast), transform 500ms var(--ease-spring); }
 .soundToggle:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--m-surface) 75%, transparent); }
-@keyframes beat { 0% { transform: scale(1.12); } 40% { transform: scale(1); } 100% { transform: scale(1); } }
+@keyframes beat { 0% { transform: scale(1.04); } 40% { transform: scale(1); } 100% { transform: scale(1); } }
 
 .developing > * { animation: develop 2.8s var(--ease-out) both; }
 .developing .field { animation-delay: 0.3s; }
 @keyframes develop { from { opacity: 0; filter: brightness(0.2) blur(12px); } 60% { filter: brightness(0.9) blur(2px); } to { opacity: 1; filter: none; } }
 
 .stack { position: relative; overflow: hidden; }
-.stack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: var(--m-filter); opacity: 0; }
+.stack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: var(--m-filter); opacity: 0; will-change: opacity, transform; backface-visibility: hidden; }
 .stack img.on { opacity: 1; z-index: 1; }
 .t_dissolve img { transition: opacity calc(var(--m-beat) * 2) var(--m-ease); }
-.t_drift img { transition: opacity calc(var(--m-beat) * 3) var(--m-ease), transform calc(var(--m-cut) * 2) linear; transform: scale(1.06); }
-.t_drift img.on { transform: scale(1); }
+.t_drift img { transition: opacity calc(var(--m-beat) * 3) var(--m-ease), transform 0s linear calc(var(--m-beat) * 3); transform: scale(1.015); }
+.t_drift img.on { transform: scale(1); transition: opacity calc(var(--m-beat) * 3) var(--m-ease), transform calc(var(--m-cut) * 2.5) cubic-bezier(0.25, 0.1, 0.25, 1); }
 .t_cut img { transition: none; }
 .t_shutter img { transition: clip-path calc(var(--m-beat) * 0.8) var(--m-ease), opacity 0s linear calc(var(--m-beat) * 0.8); clip-path: inset(0 0 100% 0); opacity: 1; }
 .t_shutter img.on { clip-path: inset(0 0 0 0); transition: clip-path calc(var(--m-beat) * 0.8) var(--m-ease); }
-.t_slide img { transition: transform calc(var(--m-beat) * 1.2) var(--m-ease), opacity calc(var(--m-beat) * 1.2) var(--m-ease); transform: translateX(8%); }
+.t_slide img { transition: transform calc(var(--m-beat) * 1.4) var(--m-ease), opacity calc(var(--m-beat) * 1.4) var(--m-ease); transform: translateX(3%); }
 .t_slide img.on { transform: none; }
 
 .compFilm {
@@ -185,13 +185,18 @@
 
 .reel { position: fixed; inset: 0; z-index: 200; background: var(--m-ground); color: var(--m-ink); display: grid; overflow: hidden; animation: fadeIn 600ms var(--ease-out); }
 .reelPhotos { position: absolute; inset: 0; }
-.reelPhotos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: var(--m-filter) brightness(0.72); opacity: 0; transform: scale(1.08) translateX(var(--kb)); }
-.reelPhotos img.on { opacity: 1; transform: scale(1) translateX(0); transition: transform calc(var(--m-cut) * 1.4) linear, opacity calc(var(--m-beat) * 1.5) var(--m-ease); }
-.t_cut .reelPhotos img.on { transition: transform calc(var(--m-cut) * 1.4) linear; }
+.reelPhotos img {
+  position: absolute; inset: 6vh 6vw 12vh; width: calc(100% - 12vw); height: calc(100% - 18vh); object-fit: contain;
+  filter: var(--m-filter) brightness(0.86); opacity: 0; transform: scale(1.012) translateX(calc(var(--kb) * 0.4));
+  will-change: opacity, transform; backface-visibility: hidden;
+  transition: opacity calc(var(--m-beat) * 1.8) var(--m-ease), transform 0s linear calc(var(--m-beat) * 1.8);
+}
+.reelPhotos img.on { opacity: 1; transform: none; transition: transform calc(var(--m-cut) * 2) cubic-bezier(0.25, 0.1, 0.25, 1), opacity calc(var(--m-beat) * 1.8) var(--m-ease); }
+.t_cut .reelPhotos img, .t_cut .reelPhotos img.on { transition: transform calc(var(--m-cut) * 2) linear, opacity 120ms linear; }
 .t_shutter .reelPhotos img.on { animation: shutter calc(var(--m-beat) * 0.7) var(--m-ease); }
 .t_slide .reelPhotos img.on { animation: slideIn calc(var(--m-beat) * 1.1) var(--m-ease); }
 @keyframes shutter { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
-@keyframes slideIn { from { translate: 12% 0; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+@keyframes slideIn { from { translate: 4% 0; opacity: 0; } to { translate: 0 0; opacity: 1; } }
 @keyframes fadeIn { from { opacity: 0; } }
 .reelField { position: absolute; inset: 0; z-index: 1; mix-blend-mode: screen; }
 .light .reelField { mix-blend-mode: normal; opacity: 0.7; }
