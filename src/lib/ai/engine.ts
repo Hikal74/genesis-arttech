@@ -38,9 +38,13 @@ export function subscribeAi(fn: (s: AiStatus) => void) {
   return () => void listeners.delete(fn);
 }
 
+const isDesktop = () => typeof navigator !== "undefined" && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
 export function savedModel(): ModelChoice | null {
   try {
     const v = localStorage.getItem(PREF_KEY);
+    // The light model often ignores questions; computers always get the stronger one.
+    if (v === "light" && isDesktop()) return "better";
     return v === "light" || v === "better" ? v : null;
   } catch {
     return null;
@@ -78,7 +82,7 @@ async function createInWorker(
 }
 
 /** Download (first time) and start the on-device model. Safe to call many times. */
-export function startAi(choice: ModelChoice = savedModel() ?? "light"): Promise<MLCEngineInterface | null> {
+export function startAi(choice: ModelChoice = savedModel() ?? (isDesktop() ? "better" : "light")): Promise<MLCEngineInterface | null> {
   if (engine && status.state === "ready" && status.model === choice) return Promise.resolve(engine);
   if (loading) return loading;
   loading = (async () => {
@@ -141,7 +145,7 @@ export function autoStartAi() {
   const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
   const desktop = !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
   // The 1.5B model talks far better; use it where it fits comfortably.
-  void startAi(savedModel() ?? (desktop && mem >= 8 ? "better" : "light"));
+  void startAi(savedModel() ?? (desktop || mem >= 6 ? "better" : "light"));
 }
 
 export function stopAi() {

@@ -58,9 +58,11 @@ export function AiSwitch({ compact = false }: { compact?: boolean }) {
           <button type="button" className="btn btn-small btn-primary" onClick={() => pick(main)}>
             Turn on AI <em className={s.size}>{MODELS[main].size}</em>
           </button>
-          <button type="button" className={s.link} onClick={() => pick(other)}>
-            or the {MODELS[other].label.toLowerCase()} version ({MODELS[other].size})
-          </button>
+          {!desktop && (
+            <button type="button" className={s.link} onClick={() => pick(other)}>
+              or the {MODELS[other].label.toLowerCase()} version ({MODELS[other].size})
+            </button>
+          )}
         </div>
       )}
     </div>
