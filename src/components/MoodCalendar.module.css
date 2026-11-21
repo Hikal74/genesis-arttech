@@ -9,7 +9,7 @@
 .mname { margin: 0; font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--paper-dim); }
 .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
 .grid > * { aspect-ratio: 1; border-radius: 2px; }
-.empty { background: rgba(255, 255, 255, 0.05); }
+.empty { background: rgba(31, 29, 26, 0.05); }
 .empty[data-today] { outline: 1px solid var(--accent); outline-offset: 1px; }
 .day { display: block; transition: transform var(--d-fast) var(--ease-out), box-shadow var(--d-fast); }
 .day:hover, .day:focus-visible { transform: scale(1.35); box-shadow: 0 0 12px currentColor; z-index: 1; position: relative; }

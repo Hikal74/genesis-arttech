@@ -6,7 +6,7 @@
   padding: 6px; background: transparent; border: 1px solid transparent; border-radius: 2.5px;
   color: var(--paper); font: inherit; text-align: left; cursor: pointer;
 }
-.item:hover { background: rgba(255, 255, 255, 0.05); }
+.item:hover { background: rgba(31, 29, 26, 0.05); }
 .item[aria-pressed="true"] { border-color: var(--accent); background: var(--safelight-soft); }
 .item img, .noart { width: 48px; height: 48px; border-radius: 2.5px; object-fit: cover; background: var(--ink-3); display: block; }
 .names { display: grid; min-width: 0; }

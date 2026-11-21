@@ -63,13 +63,8 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
   const p = entry.design.palette;
   const mood = MOOD[countMood(entry.text).mood];
 
-  // ground with a soft glow
+  // flat paper ground
   ctx.fillStyle = p.ground;
-  ctx.fillRect(0, 0, W, H);
-  const g = ctx.createRadialGradient(W * 0.8, H * 0.1, 40, W * 0.8, H * 0.1, W);
-  g.addColorStop(0, `${p.glow}66`);
-  g.addColorStop(1, `${p.glow}00`);
-  ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
   // photographs: one big, up to two small

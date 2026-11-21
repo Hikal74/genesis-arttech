@@ -89,7 +89,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
   const themed = settled.mood.hits.length > 0;
   const face = useMemo(() => faceFor(settled.mood, settled.reading), [settled]);
   const dayVars = (themed
-    ? { "--accent": blend.palette.accent, "--day-glow": blend.palette.glow, "--day-ground": blend.palette.ground }
+    ? {}
     : {}) as React.CSSProperties;
   useEffect(() => { setMascotContext(text); }, [text]);
   useEffect(() => () => setMascotContext(""), []);
@@ -134,7 +134,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     }
   }, [text, wish, picked, applyTrack]);
 
-  // Nimbus chat actions: "use this title" and "pick a song" act on this form.
+  // Chat actions: "use this title" and "pick a song" act on this form.
   useEffect(() => {
     const w = window as unknown as { __feltComposer?: boolean };
     w.__feltComposer = true;

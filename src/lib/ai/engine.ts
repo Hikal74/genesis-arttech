@@ -94,7 +94,7 @@ export function resumeAi() {
 }
 
 /**
- * Start WebLLM without a click (when Nimbus opens): light model, only on devices with WebGPU,
+ * Start WebLLM without a click (when the chat opens): light model, only on devices with WebGPU,
  * not on mobile data / data saver, and never again after the visitor turned AI off.
  */
 export function autoStartAi() {
@@ -129,6 +129,28 @@ export function complete(messages: ChatCompletionMessageParam[], opts: { maxToke
         ...(opts.json ? { response_format: { type: "json_object" as const } } : {}),
       });
       return res.choices[0]?.message?.content?.trim() || null;
+    } catch (err) {
+      console.error("[ai]", err instanceof Error ? err.message : String(err));
+      return null;
+    }
+  };
+  const p = queue.then(run, run);
+  queue = p.catch(() => {});
+  return p;
+}
+
+/** Streams a completion token by token; resolves to the full text (null when the model is not running). */
+export function completeStream(messages: ChatCompletionMessageParam[], onText: (soFar: string) => void, opts: { maxTokens: number; temperature?: number }): Promise<string | null> {
+  const run = async () => {
+    if (!engine || status.state !== "ready") return null;
+    try {
+      const chunks = await engine.chat.completions.create({ messages, max_tokens: opts.maxTokens, temperature: opts.temperature ?? 0.7, stream: true });
+      let text = "";
+      for await (const c of chunks) {
+        text += c.choices[0]?.delta?.content ?? "";
+        onText(text);
+      }
+      return text.trim() || null;
     } catch (err) {
       console.error("[ai]", err instanceof Error ? err.message : String(err));
       return null;
