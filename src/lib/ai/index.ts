@@ -41,7 +41,7 @@ export async function aiTitle(text: string): Promise<{ title: string; source: So
   const words = line.replace(/^(title:\s*)/i, "").replace(/["'«»“”*#]/g, "").replace(/[.!,;:]+$/, "").trim().split(/\s+/).filter(Boolean);
   // Small models sometimes run long: keep the first few words instead of throwing the title away.
   const clean = words.slice(0, 7).join(" ").replace(/[,;:]+$/, "");
-  if (clean && line !== REFUSAL_SECRET && clean.length <= 80 && words.length <= 14) return { title: clean, source: "ai" };
+  if (clean && line !== REFUSAL_SECRET && clean.length <= 80 && words.length >= 3 && words.length <= 14) return { title: clean, source: "ai" };
   return { title: analyzeTextLocally(text).title, source: "local" };
 }
 

@@ -41,6 +41,7 @@ export const EntryInput = z.object({
     z.object({
       kind: z.literal("link"),
       url: z.string().url().max(600),
+      analysis: AudioAnalysisIn.nullable().optional(),
       title: z.string().max(200).nullable().optional(),
       artist: z.string().max(200).nullable().optional(),
       feel: z.object({ bpm: z.number().min(40).max(220).nullable(), energy: unit, mode: z.enum(["major", "minor", "unknown"]) }).nullable().optional(),
@@ -102,6 +103,7 @@ export async function developEntry(input: EntryInputT, opts: DevelopOptions): Pr
     const prev = opts.previous?.music;
     music = prev?.kind === "link" && prev.url === input.music.url ? { ...prev } : await resolveLink(input.music.url);
     music.feel = input.music.feel ?? null;
+    if (input.music.analysis) music.analysis = input.music.analysis;
     music.title ??= input.music.title ?? null;
     music.artist ??= input.music.artist ?? null;
   }
