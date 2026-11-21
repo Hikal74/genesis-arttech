@@ -92,6 +92,9 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     ? {}
     : {}) as React.CSSProperties;
   useEffect(() => { setMascotContext(text); }, [text]);
+  // Once someone is really writing, quietly get the on-device AI ready (desktop, good connection, not turned off).
+  const writing = text.trim().length > 40;
+  useEffect(() => { if (writing) autoStartAi(); }, [writing]);
   useEffect(() => () => setMascotContext(""), []);
 
   const [wish, setWish] = useState("");

@@ -104,8 +104,24 @@ async function searchItunes(q: string, limit: number): Promise<TrackHit[]> {
   }));
 }
 
+// Same searches come up again and again (and every AI song pick is checked) — keep results for a day.
+const cache = new Map<string, { at: number; value: { provider: "spotify" | "itunes"; tracks: TrackHit[] } }>();
+const DAY = 24 * 60 * 60 * 1000;
+
 export async function searchTracks(q: string, limit = 8): Promise<{ provider: "spotify" | "itunes"; tracks: TrackHit[] }> {
   const query = q.replace(/\s+/g, " ").trim().slice(0, 200);
+  const key = `${query.toLowerCase()}|${limit}`;
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < DAY) return hit.value;
+  const value = await searchUncached(query, limit);
+  if (value.tracks.length) {
+    cache.set(key, { at: Date.now(), value });
+    if (cache.size > 2000) cache.delete(cache.keys().next().value!);
+  }
+  return value;
+}
+
+async function searchUncached(query: string, limit: number): Promise<{ provider: "spotify" | "itunes"; tracks: TrackHit[] }> {
   const fromSpotify = await searchSpotify(query, limit).catch(() => null);
   if (fromSpotify) return { provider: "spotify", tracks: fromSpotify };
   return { provider: "itunes", tracks: await searchItunes(query, limit).catch(() => []) };

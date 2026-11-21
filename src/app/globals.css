@@ -225,7 +225,7 @@ article + .site-footer { margin-top: 0; }
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
 
-.page-enter { animation: pageEnter 600ms var(--ease-out) both; }
+.page-enter { animation: pageEnter 600ms var(--ease-out) backwards; }
 @keyframes pageEnter { from { opacity: 0; transform: translateY(14px); } }
 .cv { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 

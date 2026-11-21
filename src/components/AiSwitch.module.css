@@ -1,10 +1,10 @@
 .box { display: grid; gap: var(--s-2); padding: var(--s-3) 0; }
 .row { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
 .text { font-size: 0.82rem; line-height: 1.5; color: var(--paper-dim); }
-.choices { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.choices { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
 .size { font-style: normal; opacity: 0.6; margin-left: 4px; font-size: 0.78rem; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper-faint); flex: none; }
-.dot[data-on] { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.dot[data-on] { background: #3E7B4F; }
 .link { background: none; border: 0; padding: 0; color: var(--paper-2); font: inherit; font-size: 0.82rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .link:hover { color: var(--paper); }
 .bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }

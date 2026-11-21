@@ -37,8 +37,11 @@ export async function aiTitle(text: string): Promise<{ title: string; source: So
     [{ role: "system", content: TITLE_LITE }, { role: "user", content: cleanInput(text, 3000) }],
     { maxTokens: 24, temperature: 0.6 },
   );
-  const clean = out ? scrubReply(out, 200).split("\n")[0].replace(/^["'«“]+|["'»”.]+$/g, "").trim() : null;
-  if (clean && clean !== REFUSAL_SECRET && clean.length <= 80 && clean.split(/\s+/).length <= 8) return { title: clean, source: "ai" };
+  const line = out ? scrubReply(out, 200).split("\n").find((l) => l.trim()) ?? "" : "";
+  const words = line.replace(/^(title:\s*)/i, "").replace(/["'«»“”*#]/g, "").replace(/[.!,;:]+$/, "").trim().split(/\s+/).filter(Boolean);
+  // Small models sometimes run long: keep the first few words instead of throwing the title away.
+  const clean = words.slice(0, 7).join(" ").replace(/[,;:]+$/, "");
+  if (clean && line !== REFUSAL_SECRET && clean.length <= 80 && words.length <= 14) return { title: clean, source: "ai" };
   return { title: analyzeTextLocally(text).title, source: "local" };
 }
 

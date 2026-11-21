@@ -16,7 +16,8 @@ export async function GET(request: Request) {
     const { q, limit, clean } = In.parse({ q: p.get("q") ?? "", limit: p.get("limit") ?? undefined, clean: p.get("clean") ?? undefined });
     const out = await searchTracks(q, clean === "1" ? Math.min(20, limit * 2) : limit);
     const tracks = (clean === "1" ? out.tracks.filter((t) => !t.explicit) : out.tracks).slice(0, limit);
-    return json({ provider: out.provider, tracks });
+    // Not personal data: let the CDN and the browser reuse identical searches.
+    return json({ provider: out.provider, tracks }, { headers: { "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" } });
   } catch (err) {
     return handle(err);
   }
