@@ -21,14 +21,13 @@ export default async function YearPage({ searchParams }: { searchParams: Promise
   return (
     <main className="wrap" style={{ paddingTop: "var(--s-7)", paddingBottom: "var(--s-9)" }}>
       <header style={{ marginBottom: "var(--s-6)" }}>
-        <p className="meta section-label" style={{ marginBottom: "var(--s-4)" }}>year in felt</p>
-        <h1 className="display" style={{ fontSize: "clamp(2.4rem, 5.6vw, 4.6rem)" }}>
-          {year}, <em>felt.</em>
+        <h1 className="display" style={{ fontSize: "clamp(2rem, 3.6vw, 2.8rem)" }}>
+          Your {year} in review
         </h1>
       </header>
       <YearStory stats={stats} years={years} />
       <section style={{ marginTop: "var(--s-9)" }}>
-        <p className="meta section-label" style={{ marginBottom: "var(--s-5)" }}>mood calendar</p>
+        <h2 style={{ margin: "0 0 var(--s-5)", fontSize: "1.5rem", fontWeight: 650, letterSpacing: "-0.02em" }}>Mood calendar</h2>
         <MoodCalendar entries={(stats.demo ? entries.filter((e) => e.demo) : own).map(({ id, day, title, mood }) => ({ id, day, title, mood }))} year={Number((stats.firstDay ?? String(year)).slice(0, 4))} />
       </section>
     </main>
