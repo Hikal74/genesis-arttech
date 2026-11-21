@@ -20,7 +20,7 @@ function slidesFor(st: YearStats): Slide[] {
   const out: Slide[] = [
     {
       key: "intro",
-      bg: "radial-gradient(120% 90% at 20% 10%, #2a2c45, #12131C)",
+      bg: "#ECE6D9",
       body: (
         <>
           <p className={s.kicker}>{st.demo ? "a preview with the demonstration days" : `your ${st.year}`}</p>
@@ -34,7 +34,7 @@ function slidesFor(st: YearStats): Slide[] {
   if (top) {
     out.push({
       key: "mood",
-      bg: `radial-gradient(110% 80% at 70% 20%, ${top.color}55, #12131C 70%)`,
+      bg: `color-mix(in srgb, ${top.color} 22%, #F3EEE4)`,
       body: (
         <>
           <p className={s.kicker}>your year mostly felt</p>
@@ -53,14 +53,14 @@ function slidesFor(st: YearStats): Slide[] {
   }
   out.push({
     key: "colours",
-    bg: "linear-gradient(160deg, #191a29, #12131C)",
+    bg: "#F3EEE4",
     body: (
       <>
         <p className={s.kicker}>the colour of each month</p>
         <div className={s.months}>
           {st.months.map((m) => (
             <div key={m.month} className={s.monthCell}>
-              <span className={s.swatch} style={{ background: m.colors.length ? `linear-gradient(135deg, ${m.colors.join(", ")}${m.colors.length === 1 ? `, ${m.colors[0]}` : ""})` : "rgba(255,255,255,0.05)" }} />
+              <span className={s.swatch} style={{ background: m.colors[0] ?? "rgba(31,29,26,0.06)", boxShadow: m.colors[1] ? `inset -10px -10px 0 ${m.colors[1]}` : undefined }} />
               <em>{MONTHS[m.month]}</em>
             </div>
           ))}
@@ -71,7 +71,7 @@ function slidesFor(st: YearStats): Slide[] {
   if (st.words.length) {
     out.push({
       key: "words",
-      bg: "radial-gradient(100% 80% at 30% 80%, #3a2f1c, #12131C 70%)",
+      bg: "#EFE3CC",
       body: (
         <>
           <p className={s.kicker}>words you kept coming back to</p>
@@ -89,7 +89,7 @@ function slidesFor(st: YearStats): Slide[] {
   if (st.songs.length || st.bpm) {
     out.push({
       key: "music",
-      bg: "radial-gradient(100% 90% at 80% 10%, #1d3a33, #12131C 70%)",
+      bg: "#DDE5D8",
       body: (
         <>
           <p className={s.kicker}>the soundtrack</p>
@@ -102,7 +102,7 @@ function slidesFor(st: YearStats): Slide[] {
   }
   out.push({
     key: "moments",
-    bg: "linear-gradient(200deg, #20223a, #12131C)",
+    bg: "#E4E0EC",
     body: (
       <>
         <p className={s.kicker}>moments</p>
@@ -116,7 +116,7 @@ function slidesFor(st: YearStats): Slide[] {
   });
   out.push({
     key: "end",
-    bg: "radial-gradient(120% 100% at 50% 0%, #FFD83D33, #12131C 60%)",
+    bg: "#F4D8CC",
     body: (
       <>
         <p className={s.kicker}>{st.demo ? "now make it yours" : "thank you for every day"}</p>

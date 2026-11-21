@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Ambient } from "@/components/Ambient";
-import { LazyMascot } from "@/components/LazyMascot";
+import { LazyChat } from "@/components/LazyChat";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Spotlight } from "@/components/Spotlight";
 import "@fontsource-variable/inter-tight/wght.css";
 import "@fontsource-variable/fraunces/opsz.css";
 import "@fontsource-variable/fraunces/opsz-italic.css";
@@ -18,18 +16,16 @@ export const metadata: Metadata = {
   description: "Write about your day, add photographs and a song. Felt develops them into an artistic memory you can return to.",
 };
 
-export const viewport: Viewport = { themeColor: "#12131C", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#F3EEE4", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="grain">
-        <Ambient />
-        <Spotlight />
         <SiteHeader />
         {children}
         <SiteFooter />
-        <LazyMascot />
+        <LazyChat />
       </body>
     </html>
   );
