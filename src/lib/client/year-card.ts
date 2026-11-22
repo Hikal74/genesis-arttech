@@ -7,7 +7,6 @@ import { F, shareImage } from "./postcard";
 const W = 1080, H = 1920, PAD = 84, TOP = 250, BOTTOM = 260;
 const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
-/** A 9:16 "my year in Felt" image for Instagram Stories. */
 export async function makeYearCard(st: YearStats): Promise<Blob> {
   await document.fonts?.ready;
   const c = document.createElement("canvas");
@@ -33,7 +32,6 @@ export async function makeYearCard(st: YearStats): Promise<Blob> {
   ctx.font = `300 54px ${F().serif}`;
   ctx.fillText(`${st.days === 1 ? "day" : "days"} felt · ${st.photos} photos`, PAD, y);
 
-  // mood
   y += 130;
   ctx.fillStyle = "rgba(31,29,26,0.6)";
   ctx.font = `500 28px ${F().mono}`;
@@ -52,7 +50,6 @@ export async function makeYearCard(st: YearStats): Promise<Blob> {
     x += w;
   }
 
-  // months
   y += 110;
   const cell = (W - PAD * 2) / 12;
   st.months.forEach((m, i) => {
@@ -69,7 +66,6 @@ export async function makeYearCard(st: YearStats): Promise<Blob> {
     ctx.fillText(MONTHS[i], cx - 7, y + r + 34);
   });
 
-  // words
   y += 170;
   if (st.words.length) {
     ctx.fillStyle = "rgba(31,29,26,0.6)";
@@ -87,7 +83,6 @@ export async function makeYearCard(st: YearStats): Promise<Blob> {
     }
   }
 
-  // song + mark
   ctx.font = `500 34px ${F().sans}`;
   ctx.fillStyle = "#D9472B";
   if (st.songs[0]) ctx.fillText(`♪  ${st.songs[0].song}`.slice(0, 48), PAD, H - BOTTOM - 70);

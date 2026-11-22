@@ -16,6 +16,9 @@ import { setMascotContext } from "@/lib/client/mascot-context";
 import { SongSearch } from "./SongSearch";
 import { VoiceInput } from "./VoiceInput";
 import { Icon } from "./Icon";
+import { Circled } from "./Sketch";
+import { sfx } from "@/lib/client/sound";
+import { MarginDoodles } from "./MarginDoodles";
 import { MoodMeter } from "./MoodMeter";
 import { Waveform } from "./Waveform";
 import s from "./Composer.module.css";
@@ -77,8 +80,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
   }, [text]);
 
   const mood = useMemo(() => countMood(text), [text]);
-  // The theme follows the words calmly: it waits for a pause in typing, then the
-  // colours ease over a few seconds (registered CSS properties in globals.css).
   const [settled, setSettled] = useState(() => ({ mood, reading }));
   useEffect(() => {
     const t = setTimeout(() => setSettled({ mood, reading }), 1200);
@@ -109,8 +110,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
       measuring: Boolean(tr.previewUrl),
     });
     if (!tr.previewUrl) return;
-    // Listen to the official 30-second preview in the browser: real tempo, key and energy shape the memory.
-    // The preview is only analysed here — it is never stored or re-shared.
     void (async () => {
       let analysis: AudioAnalysis | undefined;
       try {
@@ -147,7 +146,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     }
   }, [text, wish, picked, applyTrack]);
 
-  // "Choose for me": pick once the day has enough words and no song is set yet.
   useEffect(() => {
     if (!autoMusic || picking || (music && music.status === "ready") || (music?.kind === "link" && music.reason) || text.trim().length < 60) return;
     const t = setTimeout(pickSong, 1500);
@@ -179,6 +177,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     if (list.length > take.length) setError("A day can hold up to 12 photographs.");
     const items: PhotoItem[] = take.map(() => ({ id: crypto.randomUUID(), preview: "", status: "processing" }));
     setPhotos((prev) => [...prev, ...items]);
+    sfx.tape();
     await Promise.all(
       take.map(async (file, i) => {
         try {
@@ -235,7 +234,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
       }
     }, 500);
     return () => { clearTimeout(t); ctrl.abort(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkUrl]);
 
   const develop = async () => {
@@ -243,7 +241,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     setError(null);
     if (!canDevelop || !music) return;
     try {
-      // An empty title is named on the server (by Claude when configured, otherwise from the words).
       const finalTitle: string | null = title.trim() || null;
       const total = photos.filter((p) => !p.media).length + (music.kind === "file" && !music.media ? 1 : 0) + (narration && !narration.media ? 1 : 0);
       let done = 0;
@@ -315,27 +312,30 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
   return (
     <div className={s.composer} style={dayVars}>
-      <div className={s.dayAura} aria-hidden />
       <div className={s.main}>
         <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}><Icon name="pen" size={18} /></span>
+            <span className={s.num}><Circled>1</Circled></span>
             <h2>The day, in your words</h2>
           </header>
           <div className={s.dateRow}>
             <label className="meta" htmlFor="day">Date</label>
             <input id="day" type="date" className="input" value={day} max={today()} onChange={(e) => setDay(e.target.value)} />
           </div>
+          <div className={`grid-paper ${s.paper}`}>
+          <MarginDoodles text={text} max={12} />
           <textarea
             className={s.textarea}
             data-face={face.key}
             style={{ fontFamily: face.family, fontSize: `calc(clamp(1.05rem, 1.4vw, 1.18rem) * ${face.scale})`, fontWeight: face.weight }}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={() => sfx.scratch()}
             placeholder={`Write about today. ${prompt}`}
             aria-label="What happened today, and how did it feel?"
             maxLength={8000}
           />
+          </div>
           <VoiceInput onText={(said) => setText((t) => (t.trim() ? `${t.trimEnd()} ${said}` : said).slice(0, 8000))} />
           <div className={s.readingRow}>
             <span className={s.faceTag} title={face.reason}>
@@ -360,7 +360,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
         <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}><Icon name="image" size={18} /></span>
+            <span className={s.num}><Circled>2</Circled></span>
             <h2>Photographs</h2>
             <span className="meta">{photos.length}/12 · first one leads</span>
           </header>
@@ -372,7 +372,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
                   {p.status === "processing" && <div className={`${s.thumbImg} skeleton`} />}
                   {p.status === "error" && <div className={s.thumbErr}>{p.error}</div>}
                   {p.status === "ready" && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img decoding="async" src={p.preview} alt={`Photograph ${i + 1}`} className={s.thumbImg} draggable={false} />
                   )}
                   <div className={s.thumbBar}>
@@ -393,11 +392,11 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
         <section id="song-of-the-day" className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}><Icon name="music" size={18} /></span>
+            <span className={s.num}><Circled>3</Circled></span>
             <h2>The song of the day</h2>
           </header>
           <div className="segmented" role="group" aria-label="Music source">
-            <button type="button" aria-pressed={musicTab === "ai"} onClick={() => setMusicTab("ai")}>✦ Pick for me</button>
+            <button type="button" aria-pressed={musicTab === "ai"} onClick={() => setMusicTab("ai")}>Pick for me</button>
             <button type="button" aria-pressed={musicTab === "spotify"} onClick={() => setMusicTab("spotify")}>Search songs</button>
             <button type="button" aria-pressed={musicTab === "file"} onClick={() => setMusicTab("file")}>Audio file</button>
             <button type="button" aria-pressed={musicTab === "link"} onClick={() => { setMusicTab("link"); if (music?.kind !== "link" || music.reason || music.trackId) setMusic({ kind: "link", url: "", preview: null, status: "idle", feel: { bpm: null, energy: 0.5, mode: "unknown" } }); }}>
@@ -488,7 +487,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
         <section className={`glass ${s.block}`}>
           <header className={s.blockHead}>
-            <span className={s.num}><Icon name="mic" size={18} /></span>
+            <span className={s.num}><Circled>4</Circled></span>
             <h2>A voice note <em>(optional)</em></h2>
           </header>
           <Recorder value={narration} onChange={setNarration} />
@@ -521,7 +520,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
           <label className={s.titleField}>
             <span className={s.titleHead}>
               <span className="meta">Title</span>
-              <button type="button" className={s.suggest} onClick={suggestTitle} disabled={naming}>{naming ? "naming…" : "✦ suggest"}</button>
+              <button type="button" className={s.suggest} onClick={suggestTitle} disabled={naming}>{naming ? "Naming…" : "Suggest"}</button>
             </span>
             <input className="input" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder={editing && initial ? initial.title : aiReady ? "Leave empty — AI will name it for you" : "Leave empty — Felt names it from your words"} />
           </label>
@@ -532,7 +531,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
           {error && <p className="notice error" role="alert">{error}</p>}
 
           <button type="button" className={`btn btn-primary ${s.develop} ${canDevelop ? s.ready : ""}`} onClick={develop} disabled={Boolean(phase) || busyPhotos}>
-            {editing ? "Redevelop memory" : canDevelop ? "Develop memory ✦" : `Develop memory · ${3 - doneCount} step${3 - doneCount === 1 ? "" : "s"} left`}
+            {editing ? "Redevelop memory" : canDevelop ? "Develop memory" : `Develop memory · ${3 - doneCount} step${3 - doneCount === 1 ? "" : "s"} left`}
           </button>
           <p className={s.fine}>Your diary is private to this browser’s diary key.</p>
         </div>
@@ -670,7 +669,6 @@ function Darkroom({ step, progress, photos }: { step: string; progress: number; 
       <span className={s.aurora} aria-hidden />
       <div className={s.tray}>
         {photos.slice(0, 3).map((p, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
           <img decoding="async" key={p} src={p} alt="" style={{ animationDelay: `${i * 0.6}s` }} />
         ))}
       </div>

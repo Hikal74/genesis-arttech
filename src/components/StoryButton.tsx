@@ -4,7 +4,6 @@ import { useState } from "react";
 import { isMobile } from "@/lib/client/postcard";
 import s from "./StoryButton.module.css";
 
-/** "Share to Instagram Story": builds a 9:16 image and hands it to the share sheet (download on desktop). */
 export function StoryButton({ make, label = "Instagram Story" }: { make: () => Promise<"shared" | "downloaded" | "cancelled">; label?: string }) {
   const [state, setState] = useState<"idle" | "drawing" | "shared" | "downloaded" | "error">("idle");
 

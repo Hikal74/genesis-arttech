@@ -1,6 +1,3 @@
-// Theme presets that blend into each other.
-// Each preset has an "affinity" — how strongly it matches a mood vector.
-// The two (or three) strongest presets are mixed by weight into one palette.
 import type { TextAnalysis } from "../types.ts";
 import type { MoodCount } from "../analysis/mood.ts";
 
@@ -12,7 +9,6 @@ export interface ThemePreset {
   ink: string;
   accent: string;
   glow: string;
-  /** what the preset responds to (each −1 … 1) */
   affinity: Partial<Record<"balance" | "charge" | "warmth" | "nostalgia" | "tension" | "together" | "night" | "rain", number>>;
 }
 
@@ -55,7 +51,6 @@ export function blendThemes(mood: MoodCount, analysis: TextAnalysis | null): The
     return { preset: p, score: dot };
   }).sort((x, y) => y.score - x.score);
 
-  // softmax over the top three so the blend is smooth, not a hard switch
   const top = scored.slice(0, 3);
   const exps = top.map((t) => Math.exp(t.score * 4));
   const total = exps.reduce((a, b) => a + b, 0);
@@ -66,7 +61,6 @@ export function blendThemes(mood: MoodCount, analysis: TextAnalysis | null): The
   const mixKey = (k: "ground" | "surface" | "ink" | "accent" | "glow") => mix(parts.map((p) => [p.preset[k], p.weight]));
   const ground = mixKey("ground");
   const dark = luminance(ground) < 0.35;
-  // keep text readable: ink comes from the dominant preset family (light or dark)
   const ink = dark ? "#FFFFFF" : "#11110F";
   return {
     parts,

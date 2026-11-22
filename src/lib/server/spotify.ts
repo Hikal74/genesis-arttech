@@ -1,11 +1,6 @@
 import "server-only";
 import type { TrackHit } from "../types";
 
-// Song search for the "Find a song" panel and for checking AI picks against a real catalogue.
-// Spotify Web API (client-credentials flow) when SPOTIFY_CLIENT_ID + SPOTIFY_CLIENT_SECRET are set;
-// otherwise the public iTunes catalogue, with each result linked to the same search on Spotify.
-
-
 export const spotifyEnabled = () => Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
 
 let token: { value: string; expires: number } | null = null;
@@ -104,7 +99,6 @@ async function searchItunes(q: string, limit: number): Promise<TrackHit[]> {
   }));
 }
 
-// Same searches come up again and again (and every AI song pick is checked) — keep results for a day.
 const cache = new Map<string, { at: number; value: { provider: "spotify" | "itunes"; tracks: TrackHit[] } }>();
 const DAY = 24 * 60 * 60 * 1000;
 

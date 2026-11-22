@@ -2,12 +2,6 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 
-/*
- * Browser side of Felt AI: a thin client for the server endpoint /api/ai/chat/completions
- * (OpenAI-compatible, backed by Claude). Nothing is downloaded or run in the browser, and no key
- * or prompt ever reaches it — the page only picks a preset by name.
- */
-
 export type Preset = "felt-chat" | "felt-title" | "felt-music";
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 export type AiStatus = { state: "checking" } | { state: "ready" } | { state: "off" };
@@ -23,7 +17,6 @@ function set(next: AiStatus) {
   listeners.forEach((l) => l());
 }
 
-/** Asks the server once whether Claude is configured. */
 export function checkAi(): Promise<boolean> {
   checking ??= fetch("/api/config")
     .then((r) => r.json())
@@ -56,7 +49,6 @@ async function errorOf(res: Response): Promise<AiError> {
   return new AiError(json?.error?.message ?? "The AI could not answer. Please try again.");
 }
 
-/** One complete reply (no streaming). Returns the text, or null if the AI is unavailable. */
 export async function complete(preset: Preset, messages: ChatMessage[], signal?: AbortSignal): Promise<string | null> {
   if (!(await checkAi())) return null;
   try {
@@ -70,7 +62,6 @@ export async function complete(preset: Preset, messages: ChatMessage[], signal?:
   }
 }
 
-/** Streams a reply token by token; resolves to the full text. Throws AiError with a readable message. */
 export async function completeStream(preset: Preset, messages: ChatMessage[], onText: (soFar: string) => void, signal?: AbortSignal): Promise<string> {
   const res = await fetch(ENDPOINT, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ model: preset, messages, stream: true }), signal });
   if (!res.ok || !res.body) throw await errorOf(res);

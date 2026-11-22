@@ -6,14 +6,12 @@ import { countMood } from "../analysis/mood";
 
 const W = 1080;
 
-/** Self-hosted font stacks, read from the page's CSS variables so the canvas uses the same faces. */
 export function F() {
   const css = getComputedStyle(document.documentElement);
   const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
   return { sans: v("--font-sans", "system-ui, sans-serif"), serif: v("--font-serif", "Georgia, serif"), mono: v("--font-mono", "monospace"), expressive: v("--font-expressive", "system-ui, sans-serif") };
 }
 export type CardFormat = "post" | "story";
-/** post = 4:5 feed image · story = 9:16 with Instagram's top/bottom UI zones kept clear */
 const LAYOUT = {
   post: { H: 1350, top: 72, photoH: 720, bottom: 72, titleLines: 2 },
   story: { H: 1920, top: 230, photoH: 860, bottom: 250, titleLines: 3 },
@@ -52,7 +50,6 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, max
   return lines;
 }
 
-/** Draws a shareable 4:5 postcard of one memory and returns it as a PNG blob. */
 export async function makePostcard(entry: Entry, format: CardFormat = "post"): Promise<Blob> {
   const L = LAYOUT[format], H = L.H;
   await document.fonts?.ready;
@@ -63,11 +60,9 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
   const p = entry.design.palette;
   const mood = MOOD[countMood(entry.text).mood];
 
-  // flat paper ground
   ctx.fillStyle = p.ground;
   ctx.fillRect(0, 0, W, H);
 
-  // photographs: one big, up to two small
   const imgs = (await Promise.all(entry.photos.slice(0, 3).map((ph) => loadImage(ph.media.url)))).filter((x): x is HTMLImageElement => Boolean(x));
   const pad = 72;
   const photoH = L.photoH;
@@ -88,14 +83,12 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
   }
   ctx.restore();
 
-  // palette strip
   const sw = p.swatches.slice(0, 6);
   sw.forEach((c, i) => {
     ctx.fillStyle = c;
     ctx.fillRect(pad + i * ((W - pad * 2) / sw.length), top + photoH + 24, (W - pad * 2) / sw.length, 14);
   });
 
-  // date + mood
   let y = top + photoH + 92;
   ctx.fillStyle = p.muted;
   ctx.font = `500 26px ${F().mono}`;
@@ -108,7 +101,6 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
   ctx.fill();
   ctx.fillText(mood.label.toUpperCase(), W - pad - mw, y);
 
-  // title
   y += 34;
   ctx.fillStyle = p.ink;
   ctx.font = `300 84px ${F().serif}`;
@@ -117,7 +109,6 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
     ctx.fillText(line, pad, y);
   }
 
-  // atmosphere line
   ctx.fillStyle = p.muted;
   ctx.font = `italic 300 34px ${F().serif}`;
   for (const line of wrap(ctx, entry.analysis.atmosphereLine, W - pad * 2, 2)) {
@@ -125,7 +116,6 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
     ctx.fillText(line, pad, y);
   }
 
-  // song + mark
   const song = entry.music.kind === "file" ? entry.music.name : [entry.music.title, entry.music.artist].filter(Boolean).join(" — ");
   ctx.font = `500 28px ${F().sans}`;
   ctx.fillStyle = p.accent;
@@ -141,7 +131,6 @@ export async function makePostcard(entry: Entry, format: CardFormat = "post"): P
 const slug = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").slice(0, 40);
 export const isMobile = () => typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-/** Opens the phone's share sheet (Instagram → Story is one tap from there); downloads on desktop. */
 export async function shareImage(blob: Blob, name: string, title: string): Promise<"shared" | "downloaded" | "cancelled"> {
   const file = new File([blob], name, { type: "image/png" });
   if (isMobile() && navigator.canShare?.({ files: [file] })) {

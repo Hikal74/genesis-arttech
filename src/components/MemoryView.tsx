@@ -8,6 +8,7 @@ import { mulberry32 } from "@/lib/engine/random";
 import { designVars, formatDay, titleStyle, TREATMENT_LABEL } from "@/lib/theme";
 import { PROVIDER_LABEL } from "@/lib/music-link";
 import { GenerativeField } from "./GenerativeField";
+import { DoodleRow } from "./MarginDoodles";
 import { Photo } from "./Photo";
 import { Waveform } from "./Waveform";
 import { Explain } from "./Explain";
@@ -153,6 +154,7 @@ export function MemoryView({ entry, fresh = false }: { entry: Entry; fresh?: boo
           <div className={s.entryText}>
             <p className={s.kicker}>The entry, as written</p>
             {entry.text.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}
+            <DoodleRow text={entry.text} />
           </div>
         </div>
       </section>
@@ -312,7 +314,6 @@ function Ornaments({ entry }: { entry: Entry }) {
   );
 }
 
-
 function Gallery({ entry }: { entry: Entry }) {
   return (
     <section className={`cv ${s.gallery}`}>
@@ -435,7 +436,6 @@ function Reel({ entry, audio, onClose }: { entry: Entry; audio: Audio; onClose: 
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const photo = tick % entry.photos.length;

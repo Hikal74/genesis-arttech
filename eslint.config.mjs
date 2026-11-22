@@ -8,6 +8,8 @@ export default defineConfig([
   {
     rules: {
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" }],
+      "@next/next/no-img-element": "off",
+      "react-hooks/exhaustive-deps": "off",
     },
   },
   globalIgnores([".next/**", "out/**", "next-env.d.ts", ".data/**"]),

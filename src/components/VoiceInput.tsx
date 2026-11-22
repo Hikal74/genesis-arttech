@@ -28,7 +28,6 @@ const ctor = (): RecCtor | null => {
 };
 const noop = () => () => {};
 
-/** Speak the day instead of typing it. Appends what was heard to the text. */
 export function VoiceInput({ onText }: { onText: (text: string) => void }) {
   const supported = useSyncExternalStore(noop, () => Boolean(ctor()), () => false);
   const [listening, setListening] = useState(false);

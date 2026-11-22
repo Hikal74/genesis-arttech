@@ -3,23 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { CHAT_SYSTEM, MEMORY_SYSTEM, MUSIC_SYSTEM, TITLE_SYSTEM } from "../ai/prompts";
 import { cleanInput, fence, scrubReply } from "../ai/guard";
 
-/*
- * Felt's AI backend: one request goes to the first provider that can answer it.
- *
- * Free tiers have small per-model quotas (requests/minute, tokens/minute, requests/day), and a single
- * model can run out during a busy demo. Each provider below has its own separate quota, so they are
- * tried in order; one that hits its limit is skipped until it resets (Retry-After), and the request
- * moves straight to the next. Keys come only from environment variables and never reach the browser.
- *
- * Order: xAI Grok (paid; only when FELT_PAID_AI=on and XAI_API_KEY is set) → Claude (only if
- *        ANTHROPIC_API_KEY is set) → Groq gpt-oss-120b → Gemini Flash-Lite → Groq gpt-oss-20b →
- *        Mistral (only if MISTRAL_API_KEY is set). The free providers stay as backups behind the paid one.
- */
-
 export type PresetName = "felt-chat" | "felt-title" | "felt-music" | "felt-memory";
 export type Turn = { role: "user" | "assistant"; content: string };
 
-/** System prompt and output limit per preset (limits include any reasoning tokens). Kept small: fewer tokens = more requests per minute on free tiers. */
 export const PRESETS: Record<PresetName, { system: string; maxTokens: number; contextAllowed: boolean }> = {
   "felt-chat": { system: process.env.FELT_CHAT_SYSTEM_PROMPT?.trim() || CHAT_SYSTEM, maxTokens: 800, contextAllowed: true },
   "felt-title": { system: TITLE_SYSTEM, maxTokens: 300, contextAllowed: false },
@@ -40,7 +26,6 @@ const env = (name: string) => process.env[name]?.trim() || "";
 
 export function providers(): Provider[] {
   const list: Provider[] = [];
-  // Paid Grok is switched on deliberately (FELT_PAID_AI=on), so the credit is spent only when wanted, e.g. for judging.
   if (env("XAI_API_KEY") && env("FELT_PAID_AI") === "on") {
     list.push({ id: "xai", kind: "openai", model: env("XAI_MODEL") || "grok-4.3", key: env("XAI_API_KEY"), url: "https://api.x.ai/v1/chat/completions" });
   }
@@ -51,7 +36,6 @@ export function providers(): Provider[] {
   const groq = (model: string): Provider => ({
     id: `groq:${model}`, kind: "openai", model, key: groqKey,
     url: "https://api.groq.com/openai/v1/chat/completions",
-    // gpt-oss models think before answering; keep that short so answers come fast and use fewer tokens.
     extra: model.includes("gpt-oss") ? { reasoning_effort: "low" } : undefined,
   });
   if (groqKey && groqModels[0]) list.push(groq(groqModels[0]));
@@ -71,8 +55,6 @@ export function providers(): Provider[] {
 }
 
 export const aiEnabled = () => providers().length > 0;
-
-/* ---------- cooldowns: a provider that ran out of quota is skipped until it resets ---------- */
 
 const coolUntil = new Map<string, number>();
 const cooling = (id: string) => (coolUntil.get(id) ?? 0) > Date.now();
@@ -95,8 +77,6 @@ function retryAfter(res: Response): number | null {
   const at = Date.parse(ra);
   return Number.isFinite(at) ? at - Date.now() : null;
 }
-
-/* ---------- one call to an OpenAI-compatible provider (Groq, Gemini, Mistral) ---------- */
 
 async function callOpenAI(p: Provider, system: string, turns: Turn[], maxTokens: number, onText: ((delta: string) => void) | null, signal: AbortSignal) {
   const res = await fetch(p.url!, {
@@ -148,8 +128,6 @@ async function callOpenAI(p: Provider, system: string, turns: Turn[], maxTokens:
   return { text, finish, inputTokens, outputTokens };
 }
 
-/* ---------- one call to Claude (official SDK), used first when ANTHROPIC_API_KEY is set ---------- */
-
 const FALLBACK_MODELS = new Set(["claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5", "claude-fable-5-1", "claude-fable-5-2"]);
 let anthropic: Anthropic | null = null;
 
@@ -196,14 +174,8 @@ async function callClaude(p: Provider, preset: PresetName, system: string, turns
   }
 }
 
-/* ---------- the failover chain ---------- */
-
 export interface Generated { text: string; finish: string; provider: string; inputTokens: number | null; outputTokens: number | null }
 
-/**
- * Runs a preset on the first available provider. With `onText`, the reply streams; a provider that
- * fails before sending any text is replaced by the next one, so the visitor never notices.
- */
 export async function generate(preset: PresetName, turns: Turn[], context: string | null, onText: ((delta: string) => void) | null, signal: AbortSignal): Promise<Generated> {
   const p = PRESETS[preset];
   const system = context && p.contextAllowed ? `${p.system}\n\nToday's diary text so far (context only):\n${fence("diary_text", cleanInput(context, 1500))}` : p.system;
@@ -211,7 +183,6 @@ export async function generate(preset: PresetName, turns: Turn[], context: strin
   if (!list.length) throw new AllBusyError("AI is not configured on this server.");
 
   const available = list.filter((x) => !cooling(x.id));
-  // If every provider is cooling down, still try the one that resets soonest rather than failing outright.
   const order = available.length ? available : [...list].sort((a, b) => (coolUntil.get(a.id) ?? 0) - (coolUntil.get(b.id) ?? 0)).slice(0, 1);
 
   for (const provider of order) {
@@ -231,20 +202,16 @@ export async function generate(preset: PresetName, turns: Turn[], context: strin
       const status = err instanceof ProviderError ? err.status : 0;
       const wait = err instanceof ProviderError && err.retryAfterMs != null ? err.retryAfterMs
         : status === 429 ? 60_000
-        : status === 401 || status === 403 || status === 404 ? 10 * 60_000 // bad key or unknown model: stop hammering it
-        : 20_000;                                                           // timeouts, 5xx, overload
+        : status === 401 || status === 403 || status === 404 ? 10 * 60_000
+        : 20_000;
       coolDown(provider.id, wait);
       console.warn(JSON.stringify({ event: "ai_failover", preset, provider: provider.id, status, cool_ms: wait, error: err instanceof Error ? err.message.slice(0, 200) : String(err) }));
-      if (streamed) throw err; // part of an answer was already shown; don't splice in another model
+      if (streamed) throw err;
     }
   }
   throw new AllBusyError("All AI providers are busy right now.");
 }
 
-/**
- * Title and atmosphere line for a new memory, in one AI call (saves quota). Each field is null when the
- * AI is off, fails or returns something unusable, so Felt's own title and line are kept.
- */
 export async function aiMemoryWords(text: string): Promise<{ title: string | null; line: string | null }> {
   const none = { title: null, line: null };
   if (!aiEnabled()) return none;

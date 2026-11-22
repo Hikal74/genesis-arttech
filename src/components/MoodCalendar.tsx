@@ -9,7 +9,6 @@ import s from "./MoodCalendar.module.css";
 type Day = Pick<EntrySummary, "id" | "day" | "title" | "mood">;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** A year of days, each coloured by how it felt. Tap a day to open it. */
 export function MoodCalendar({ entries, year: initialYear }: { entries: Day[]; year?: number }) {
   const years = useMemo(() => {
     const ys = new Set(entries.map((e) => Number(e.day.slice(0, 4))));
@@ -50,7 +49,7 @@ export function MoodCalendar({ entries, year: initialYear }: { entries: Day[]; y
         {MONTHS.map((name, mi) => {
           const first = new Date(Date.UTC(year, mi, 1));
           const days = new Date(Date.UTC(year, mi + 1, 0)).getUTCDate();
-          const offset = (first.getUTCDay() + 6) % 7; // Monday first
+          const offset = (first.getUTCDay() + 6) % 7;
           return (
             <div key={name} className={s.month}>
               <p className={s.mname}>{name}</p>

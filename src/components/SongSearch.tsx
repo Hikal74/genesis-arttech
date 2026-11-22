@@ -6,7 +6,6 @@ import s from "./SongSearch.module.css";
 
 const time = (ms: number | null) => (ms ? `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, "0")}` : "");
 
-/** Search the Spotify catalogue and pick a real track. */
 export function SongSearch({ onPick, selectedId }: { onPick: (t: TrackHit) => void; selectedId?: string | null }) {
   const [q, setQ] = useState("");
   const [state, setState] = useState<{ status: "idle" | "loading" | "done" | "error"; tracks: TrackHit[]; provider?: string; error?: string }>({ status: "idle", tracks: [] });
@@ -40,7 +39,6 @@ export function SongSearch({ onPick, selectedId }: { onPick: (t: TrackHit) => vo
           {view.tracks.map((t) => (
             <li key={t.id}>
               <button type="button" className={s.item} aria-pressed={selectedId === t.id} onClick={() => onPick(t)}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 {t.image ? <img src={t.image} alt="" width={48} height={48} loading="lazy" /> : <span className={s.noart} />}
                 <span className={s.names}>
                   <strong>{t.title}</strong>

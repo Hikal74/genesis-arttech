@@ -10,8 +10,6 @@ import { REFUSAL_SECRET } from "./prompts";
 export type Source = "ai" | "local";
 export type { TrackHit };
 
-
-/** Song search tool: Spotify catalogue (or the public fallback) through Felt's server. */
 export async function searchSongs(q: string, limit = 8, signal?: AbortSignal): Promise<{ provider: "spotify" | "itunes"; tracks: TrackHit[] }> {
   const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=${limit}`, { signal });
   const json = await res.json();
@@ -30,8 +28,6 @@ function parseJson(raw: string | null): Record<string, unknown> | null {
   }
 }
 
-/* ---------- title ---------- */
-
 export async function aiTitle(text: string): Promise<{ title: string; source: Source }> {
   const out = await complete("felt-title", [{ role: "user", content: cleanInput(text, 4000) }]);
   const line = out ? scrubReply(out, 200).split("\n").find((l) => l.trim()) ?? "" : "";
@@ -40,8 +36,6 @@ export async function aiTitle(text: string): Promise<{ title: string; source: So
   if (clean && line !== REFUSAL_SECRET && clean.length <= 80 && words.length >= 3 && words.length <= 14) return { title: clean, source: "ai" };
   return { title: analyzeTextLocally(text).title, source: "local" };
 }
-
-/* ---------- music: the model proposes, the song search confirms it is real ---------- */
 
 interface SongIdea { title: string; artist: string; bpm: number; energy: number; mode: "major" | "minor"; reason: string }
 export type SongPick = SongIdea & { track: TrackHit | null; source: Source };
@@ -93,7 +87,6 @@ async function findTrack(idea: { title: string; artist: string }): Promise<Track
     const { tracks } = await searchSongs(`${idea.title} ${idea.artist}`, 5);
     const t = norm(idea.title), a = norm(idea.artist);
     const key = a.replace(/^the /, "").split(" ")[0] ?? "";
-    // The artist must match too — a title alone could be a different, unrelated song.
     return tracks.find((x) => norm(x.title).startsWith(t) && key.length > 1 && norm(x.artist).includes(key)) ?? null;
   } catch {
     return null;
@@ -120,11 +113,8 @@ export async function aiMusic(text: string, wish?: string, avoid: string[] = [])
   return { ...pick, track: await findTrack(pick), source: "local" };
 }
 
-/* ---------- chat ---------- */
-
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
-/** Streams a Claude reply through Felt's server. Throws AiError (readable message) if the AI is unavailable. */
 export async function aiChat(messages: ChatMsg[], context: string | undefined, onText: (soFar: string) => void): Promise<string | null> {
   const last = messages.at(-1);
   if (!last || last.role !== "user") return null;

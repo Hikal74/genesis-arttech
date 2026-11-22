@@ -7,8 +7,6 @@ import type { Entry, EntrySummary } from "../types";
 import { DEMO_OWNER } from "./owner-token";
 import { countMood } from "../analysis/mood";
 
-// Postgres when DATABASE_URL is set; otherwise Vercel Blob (the same store as
-// the photos) when BLOB_READ_WRITE_TOKEN is set; otherwise a local JSON file.
 export const DB_DRIVER: "postgres" | "blob" | "file" = process.env.DATABASE_URL ? "postgres" : process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "file";
 export const DATA_ROOT = process.env.VERCEL ? "/tmp/felt" : path.join(process.cwd(), ".data");
 
@@ -195,8 +193,6 @@ const fileRepo: Repo = {
     return writeLocked(async (all) => ({ all: all.filter((e) => e.owner !== DEMO_OWNER || keep.includes(e.id)), result: undefined }));
   },
 };
-
-/* ---------- Vercel Blob: one private JSON blob per entry + one per summary ---------- */
 
 const entryPath = (owner: string, id: string) => `db/entries/${owner}/${id}.json`;
 const summaryPath = (owner: string, id: string) => `db/summaries/${owner}/${id}.json`;

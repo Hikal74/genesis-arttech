@@ -1,12 +1,3 @@
-/*
- * System prompts for Felt's AI presets. They are applied on the server (see lib/server/ai.ts);
- * the browser only chooses a preset by name and never sends or sees these instructions.
- *
- * Safety is layered: the prompts set the role, guard.ts filters obvious extraction attempts
- * before a request reaches the model and scrubs replies, and the API route rate-limits visitors.
- */
-
-/** A marker that only exists in the system prompts. If it ever shows up in a reply, guard.ts replaces it. */
 export const CANARY = "FELT-CANARY-7Q2K";
 
 export const REFUSAL_SECRET = "That's something I keep to myself, but I'd love to hear about your day.";

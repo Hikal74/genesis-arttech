@@ -126,8 +126,6 @@ export async function developEntry(input: EntryInputT, opts: DevelopOptions): Pr
   const now = new Date().toISOString();
   const manualTitle = input.title?.trim();
   const keepLocked = opts.previous?.titleLocked && !input.title;
-  // With AI configured, real entries get an AI-written title (unless the writer chose one) and atmosphere line.
-  // Demos, AI being off, and any failure keep Felt's own title and line.
   if (!opts.demo) {
     const words = await aiMemoryWords(input.text);
     if (words.title && !manualTitle && !keepLocked) {

@@ -134,7 +134,6 @@ function slidesFor(st: YearStats): Slide[] {
 function Moment({ label, m }: { label: string; m: NonNullable<YearStats["brightest"]> }) {
   return (
     <Link href={`/m/${m.id}`} className={s.moment}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       {m.cover && <img src={m.cover} alt="" loading="lazy" />}
       <span><em>{label}</em><strong>{m.title}</strong></span>
     </Link>

@@ -5,11 +5,9 @@ export type FaceKey = "grotesk" | "serif" | "mono" | "hand" | "expressive";
 
 export interface Face {
   key: FaceKey;
-  /** CSS font-family value (variables are defined in globals.css) */
   family: string;
   label: string;
   reason: string;
-  /** relative size, so very different faces read at a similar size */
   scale: number;
   weight: number;
   italic: boolean;
@@ -23,14 +21,6 @@ const FACES: Record<FaceKey, Omit<Face, "reason">> = {
   expressive: { key: "expressive", family: "var(--font-expressive)", label: "expressive", scale: 1.04, weight: 600, italic: false },
 };
 
-/**
- * The typeface follows the context of the writing:
- *   pressure, deadlines, code → mono (a typewriter for focus)
- *   heavy, lonely days        → handwriting (it feels more personal)
- *   wistful, slow, tender     → serif
- *   loud, bright, shared      → expressive grotesk
- *   otherwise                 → the house grotesk
- */
 export function faceFor(mood: MoodCount, a: TextAnalysis | null): Face {
   const pick = (key: FaceKey, reason: string): Face => ({ ...FACES[key], reason });
   if (!mood.hits.length && !a) return pick("grotesk", "waiting for your words");

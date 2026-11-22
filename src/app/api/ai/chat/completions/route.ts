@@ -4,16 +4,6 @@ import { REFUSAL_SECRET } from "@/lib/ai/prompts";
 import { AllBusyError, aiEnabled, generate, PRESETS, type PresetName, type Turn } from "@/lib/server/ai";
 import { rateLimited } from "@/lib/server/ratelimit";
 
-/*
- * POST /api/ai/chat/completions — OpenAI-compatible request and response shapes.
- *
- *   { "model": "felt-chat" | "felt-title" | "felt-music", "messages": [...], "stream": true }
- *
- * `model` names a server-side preset (prompt and limits live on the server). The server picks the
- * actual AI provider from its failover chain (see lib/server/ai.ts). A `system` message from the
- * browser is treated as diary context for felt-chat only. Streaming uses OpenAI-style SSE + `[DONE]`.
- */
-
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -27,7 +17,6 @@ const Body = z.object({
   stream: z.boolean().default(false),
 });
 
-// Per visitor, per 10 minutes. Stops one person from using up the shared free quotas.
 const LIMITS: Record<PresetName, number> = { "felt-chat": 30, "felt-title": 20, "felt-music": 20, "felt-memory": 20 };
 const BUSY = "The AI is very busy right now. Please try again in a minute.";
 const DECLINED = "Sorry, I can't help with that one.";
@@ -54,7 +43,6 @@ export async function POST(request: Request) {
     return apiError(429, "You've sent a lot of requests. Please wait a few minutes.", "rate_limit_error");
   }
 
-  // Diary context arrives as system messages; keep only recent turns (fewer tokens = more headroom on free tiers).
   const context = body.messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n") || null;
   const turns = body.messages.filter((m) => m.role !== "system").slice(-10) as Turn[];
   while (turns[0]?.role === "assistant") turns.shift();
@@ -66,7 +54,6 @@ export async function POST(request: Request) {
   const created = Math.floor(Date.now() / 1000);
   const chunk = (delta: Record<string, string>, finish: string | null, extra?: object) => ({ id, object: "chat.completion.chunk", created, model: preset, choices: [{ index: 0, delta, finish_reason: finish }], ...extra });
 
-  // Obvious attempts to extract instructions or keys never reach a model.
   if (looksLikeExtraction(last.content)) {
     if (!body.stream) return Response.json({ id, object: "chat.completion", created, model: preset, choices: [{ index: 0, message: { role: "assistant", content: REFUSAL_SECRET }, finish_reason: "stop" }] });
     return sse((send) => { send(chunk({ role: "assistant", content: REFUSAL_SECRET }, null)); send(chunk({}, "stop")); });
@@ -103,7 +90,6 @@ export async function POST(request: Request) {
   });
 }
 
-/** Server-sent events in the OpenAI style: `data: {json}` lines, then `data: [DONE]`. */
 function sse(run: (send: (data: unknown) => void) => void | Promise<void>) {
   const enc = new TextEncoder();
   const body = new ReadableStream({

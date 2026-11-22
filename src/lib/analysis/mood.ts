@@ -1,9 +1,3 @@
-// Word-combination mood counter.
-// Reads the day token by token and scores each emotional word, but the score
-// depends on its neighbours: negations flip it ("not happy"), intensifiers
-// amplify it ("so tired"), softeners damp it ("a bit sad"), and some fixed
-// two-word phrases carry their own meaning ("not bad", "fell apart").
-
 export interface MoodHit {
   word: string;
   phrase: string;
@@ -14,9 +8,7 @@ export interface MoodHit {
 export interface MoodCount {
   positive: number;
   negative: number;
-  /** -1 … 1 balance of the day */
   balance: number;
-  /** 0 … 1 how emotionally loaded the text is */
   charge: number;
   hits: MoodHit[];
   mood: "radiant" | "bright" | "calm" | "mixed" | "low" | "stormy" | "blank";
@@ -44,7 +36,6 @@ const NEGATIONS = new Set(["not", "no", "never", "nothing", "hardly", "barely", 
 const INTENSIFIERS: Record<string, number> = { very: 1.5, so: 1.4, really: 1.4, super: 1.5, extremely: 1.8, totally: 1.4, completely: 1.5, absolutely: 1.6, incredibly: 1.7, too: 1.3, truly: 1.4, deeply: 1.5, most: 1.3 };
 const SOFTENERS: Record<string, number> = { bit: 0.55, little: 0.6, slightly: 0.5, kinda: 0.6, somewhat: 0.6, almost: 0.6, quite: 0.85, rather: 0.8 };
 
-// Fixed combinations that mean something other than their parts.
 const PHRASES: [RegExp, number][] = [
   [/\bnot (?:that |too )?bad\b/g, 0.6],
   [/\bnot (?:that |too )?(?:hard|difficult)\b/g, 0.5],
@@ -71,7 +62,6 @@ export function countMood(text: string): MoodCount {
   const hits: MoodHit[] = [];
   const claimed = new Set<number>();
 
-  // 1. Phrases first, so their words are not double-counted.
   for (const [re, score] of PHRASES) {
     re.lastIndex = 0;
     let m: RegExpExecArray | null;
@@ -83,7 +73,6 @@ export function countMood(text: string): MoodCount {
     }
   }
 
-  // 2. Single words, shaped by up to three words before them.
   tokens.forEach((tok, i) => {
     if (claimed.has(i)) return;
     const base = POSITIVE[tok] ?? (NEGATIVE[tok] !== undefined ? -NEGATIVE[tok] : 0);
@@ -99,7 +88,6 @@ export function countMood(text: string): MoodCount {
       else if (INTENSIFIERS[p] && w === window.length - 1) { score *= INTENSIFIERS[p]; phrase = `${p} ${tok}`; }
       else if (SOFTENERS[p] && w >= window.length - 2) { score *= SOFTENERS[p]; phrase = `${window.slice(w).join(" ")} ${tok}`; }
     }
-    // "not happy" is less negative than "sad"; "not sad" is mildly positive.
     if (negated) score = -score * 0.6;
     hits.push({ word: tok, phrase, score: Math.round(score * 100) / 100, index: i });
   });

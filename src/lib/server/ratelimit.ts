@@ -1,7 +1,5 @@
 import "server-only";
 
-/* ---------- per-visitor rate limit (best effort, per server instance) ---------- */
-
 const buckets = new Map<string, number[]>();
 
 export function rateLimited(request: Request, scope: string, limit: number, windowMs: number): boolean {

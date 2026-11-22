@@ -17,7 +17,6 @@ export function Photo({ src, alt, width, height, sizes, className, style, priori
     return <Image src={src} alt={alt} width={width} height={height} sizes={sizes} className={className} style={style} priority={priority} quality={90} />;
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img decoding="async" loading={priority ? "eager" : "lazy"} src={src} alt={alt} width={width} height={height} className={className} style={style} />
   );
 }
