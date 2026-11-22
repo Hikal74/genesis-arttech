@@ -23,7 +23,10 @@ export function AiSwitch({ compact = false }: { compact?: boolean }) {
     return (
       <div className={s.row} data-compact={compact || undefined}>
         <span className={s.dot} data-on />
-        <span className={s.text}>on-device AI · {MODELS[status.model].label.toLowerCase()} model</span>
+        <span className={s.text}>
+          on-device AI · {MODELS[status.model].label.toLowerCase()} model
+          {status.upgrading != null && status.upgrading < 100 ? ` · getting the better model ${status.upgrading}%` : ""}
+        </span>
         <button type="button" className={s.link} onClick={stopAi}>turn off</button>
       </div>
     );

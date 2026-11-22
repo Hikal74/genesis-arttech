@@ -59,7 +59,7 @@ export function FeltChat() {
 
   return (
     <>
-      <button type="button" className={s.launcher} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="felt-chat">
+      <button type="button" className={s.launcher} onPointerEnter={autoStartAi} onFocus={autoStartAi} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="felt-chat">
         <span className={s.dot} data-on={ready || undefined} aria-hidden />
         {open ? "Close" : "Ask Felt AI"}
       </button>
@@ -74,7 +74,7 @@ export function FeltChat() {
             <button type="button" className={s.close} onClick={() => setOpen(false)} aria-label="Close chat">×</button>
           </header>
 
-          {!ready && <div className={s.status}><AiSwitch compact /></div>}
+          {(!ready || (status.state === "ready" && status.upgrading != null && status.upgrading < 100)) && <div className={s.status}><AiSwitch compact /></div>}
 
           <div className={s.list} ref={list}>
             {msgs.length === 0 && (

@@ -15,7 +15,7 @@ export type AiStatus =
   | { state: "off" }
   | { state: "unsupported"; reason: string }
   | { state: "loading"; progress: number; text: string; cached?: boolean; mb?: number; totalMb?: number; etaS?: number | null }
-  | { state: "ready"; model: ModelChoice }
+  | { state: "ready"; model: ModelChoice; upgrading?: number | null }
   | { state: "error"; message: string };
 
 const PREF_KEY = "felt:ai-model";
@@ -74,6 +74,7 @@ async function createInWorker(
     const created = webllm.CreateWebWorkerMLCEngine(worker, modelId, { initProgressCallback }, chatOpts);
     const result = await Promise.race([created, failed]);
     if (!result) worker.terminate();
+    else activeWorker = worker;
     return result;
   } catch {
     worker?.terminate();
@@ -81,11 +82,91 @@ async function createInWorker(
   }
 }
 
-/** Download (first time) and start the on-device model. Safe to call many times. */
-export function startAi(choice: ModelChoice = savedModel() ?? (isDesktop() ? "better" : "light")): Promise<MLCEngineInterface | null> {
-  if (engine && status.state === "ready" && status.model === choice) return Promise.resolve(engine);
-  if (loading) return loading;
-  loading = (async () => {
+const PARALLEL_DOWNLOADS = 8;
+
+/**
+ * Faster first download: fetch the model's weight files with more parallel connections than WebLLM's
+ * built-in 4, straight into the cache WebLLM reads from ("webllm/model", keyed by URL). WebLLM then
+ * finds every file already cached and goes straight to loading. Any failure just falls back to WebLLM.
+ */
+async function fastDownload(
+  webllm: typeof import("@mlc-ai/web-llm"),
+  modelId: string,
+  onProgress: (doneBytes: number, totalBytes: number) => void,
+): Promise<void> {
+  if (typeof caches === "undefined") return;
+  const record = webllm.prebuiltAppConfig.model_list.find((m) => m.model_id === modelId);
+  if (!record) return;
+  let base = record.model.endsWith("/") ? record.model : `${record.model}/`;
+  if (!/\/resolve\/.+\//.test(base)) base += "resolve/main/";
+  base = new URL(base).href;
+
+  const cache = await caches.open("webllm/model");
+  const manifestUrl = new URL("tensor-cache.json", base).href;
+  let manifest = await cache.match(manifestUrl);
+  if (!manifest) {
+    const res = await fetch(manifestUrl);
+    if (!res.ok) return;
+    await cache.put(manifestUrl, res.clone());
+    manifest = res;
+  }
+  const records = ((await manifest.json()) as { records: { dataPath: string; nbytes: number }[] }).records;
+  const urlOf = (r: { dataPath: string }) => new URL(r.dataPath, base).href;
+  const cachedUrls = new Set((await cache.keys()).map((r) => r.url));
+  const total = records.reduce((n, r) => n + r.nbytes, 0);
+  let done = records.filter((r) => cachedUrls.has(urlOf(r))).reduce((n, r) => n + r.nbytes, 0);
+  const todo = records.filter((r) => !cachedUrls.has(urlOf(r)));
+  onProgress(done, total);
+  // Report at most 4 times a second: per-chunk updates from 8 streams would flood React and freeze the page.
+  let lastReport = 0;
+  const report = () => {
+    const now = performance.now();
+    if (now - lastReport < 250) return;
+    lastReport = now;
+    onProgress(done, total);
+  };
+
+  const fetchOne = async (r: { dataPath: string; nbytes: number }) => {
+    const url = urlOf(r);
+    for (let attempt = 0; ; attempt++) {
+      let got = 0;
+      try {
+        const res = await fetch(url);
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        const reader = res.body.getReader();
+        const parts: Uint8Array[] = [];
+        for (;;) {
+          const { done: end, value } = await reader.read();
+          if (end) break;
+          parts.push(value);
+          got += value.length;
+          done += value.length;
+          report();
+        }
+        await cache.put(url, new Response(new Blob(parts as BlobPart[]), { headers: { "content-type": res.headers.get("content-type") ?? "application/octet-stream" } }));
+        return;
+      } catch (err) {
+        done -= got;
+        if (attempt >= 2) throw err;
+      }
+    }
+  };
+
+  let next = 0;
+  const worker = async () => {
+    while (next < todo.length) await fetchOne(todo[next++]);
+  };
+  await Promise.all(Array.from({ length: Math.min(PARALLEL_DOWNLOADS, todo.length) }, worker));
+  onProgress(done, total);
+}
+
+type WebLLM = typeof import("@mlc-ai/web-llm");
+const modelIdFor = (choice: ModelChoice, f16: boolean) => `${MODELS[choice].id}-${f16 ? "q4f16_1" : "q4f32_1"}-MLC`;
+let activeWorker: Worker | null = null;
+let upgradeStarted = false;
+
+/** Download (first time) and start one model. Callers hold the `loading` lock. */
+async function loadModel(choice: ModelChoice): Promise<MLCEngineInterface | null> {
     const gpu = await gpuSupport();
     if (!gpu.ok) {
       set({ state: "unsupported", reason: gpu.reason! });
@@ -94,7 +175,7 @@ export function startAi(choice: ModelChoice = savedModel() ?? (isDesktop() ? "be
     set({ state: "loading", progress: 0, text: "Preparing on-device AI…" });
     try {
       const webllm = await import("@mlc-ai/web-llm");
-      const modelId = `${MODELS[choice].id}-${gpu.f16 ? "q4f16_1" : "q4f32_1"}-MLC`;
+      const modelId = modelIdFor(choice, gpu.f16);
       const cached = await webllm.hasModelInCache(modelId).catch(() => false);
       const totalMb = MODELS[choice].mb;
       const started = performance.now();
@@ -105,10 +186,27 @@ export function startAi(choice: ModelChoice = savedModel() ?? (isDesktop() ? "be
         set({ state: "loading", progress: r.progress, text: r.text.replace(/\[.*?\]\s*/g, "").slice(0, 140), cached, mb: Math.min(mb, totalMb), totalMb, etaS });
       };
       if (engine) await engine.unload().catch(() => {});
+      activeWorker?.terminate();
+      activeWorker = null;
+      if (!cached) {
+        // Phase 1: our parallel download into WebLLM's cache (falls back to WebLLM's own download on failure).
+        await fastDownload(webllm, modelId, (doneBytes, totalBytes) => {
+          const mb = Math.round(doneBytes / 1e6);
+          const secs = (performance.now() - started) / 1000;
+          const etaS = mb > 20 && secs > 2 ? Math.max(0, Math.round(((totalBytes - doneBytes) / doneBytes) * secs)) : null;
+          set({ state: "loading", progress: doneBytes / totalBytes, text: "Downloading", cached: false, mb, totalMb: Math.round(totalBytes / 1e6), etaS });
+        }).catch((err) => console.warn("[ai] fast download fell back to WebLLM:", err));
+      }
+      // Phase 2: WebLLM finds the files in its cache and loads them onto the GPU.
+      const loadProgress = (r: { progress: number; text: string }) =>
+        /loading model from cache|finish loading/i.test(r.text) || cachedNow
+          ? set({ state: "loading", progress: r.progress, text: "Starting", cached: true, totalMb })
+          : initProgressCallback(r);
+      const cachedNow = cached || (await webllm.hasModelInCache(modelId).catch(() => false));
       // Smaller context window: less GPU memory, faster start and faster first token.
       const chatOpts = { context_window_size: 2048 };
-      const inWorker = await createInWorker(webllm, modelId, initProgressCallback, chatOpts);
-      engine = inWorker ?? await webllm.CreateMLCEngine(modelId, { initProgressCallback }, chatOpts);
+      const inWorker = await createInWorker(webllm, modelId, loadProgress, chatOpts);
+      engine = inWorker ?? await webllm.CreateMLCEngine(modelId, { initProgressCallback: loadProgress }, chatOpts);
       engineRuntime = inWorker ? "worker" : "main";
       // Ask the browser to keep the downloaded model, so it is never fetched twice.
       void navigator.storage?.persist?.().catch(() => false);
@@ -119,11 +217,53 @@ export function startAi(choice: ModelChoice = savedModel() ?? (isDesktop() ? "be
       engine = null;
       set({ state: "error", message: err instanceof Error ? err.message.slice(0, 200) : "The model could not start." });
       return null;
-    } finally {
-      loading = null;
     }
-  })();
+}
+
+/**
+ * Download (first time) and start the on-device model. Safe to call many times.
+ * On a first visit to a computer, the small model (280 MB) starts first so the chat works within a couple
+ * of minutes; the better model downloads in the background and replaces it automatically when ready.
+ */
+export function startAi(choice: ModelChoice = savedModel() ?? (isDesktop() ? "better" : "light")): Promise<MLCEngineInterface | null> {
+  if (engine && status.state === "ready" && status.model === choice) return Promise.resolve(engine);
+  if (engine && status.state === "ready" && status.model === "light" && choice === "better" && upgradeStarted) return Promise.resolve(engine);
+  if (loading) return loading;
+  loading = (async () => {
+    if (choice === "better" && isDesktop()) {
+      const gpu = await gpuSupport();
+      if (gpu.ok) {
+        const webllm = await import("@mlc-ai/web-llm");
+        const betterCached = await webllm.hasModelInCache(modelIdFor("better", gpu.f16)).catch(() => false);
+        if (!betterCached) {
+          const first = await loadModel("light");
+          if (first) void upgradeInBackground(webllm, gpu.f16);
+          return first;
+        }
+      }
+    }
+    return loadModel(choice);
+  })().finally(() => { loading = null; });
   return loading;
+}
+
+/** Fetch the better model into the cache while the light one is answering, then swap to it. */
+async function upgradeInBackground(webllm: WebLLM, f16: boolean) {
+  if (upgradeStarted) return;
+  upgradeStarted = true;
+  try {
+    await fastDownload(webllm, modelIdFor("better", f16), (doneBytes, totalBytes) => {
+      if (status.state === "ready") set({ ...status, upgrading: Math.round((doneBytes / totalBytes) * 100) });
+    });
+    if (!(await webllm.hasModelInCache(modelIdFor("better", f16)).catch(() => false))) return;
+    await queue; // let any reply in progress finish first
+    if (loading) await loading;
+    loading = loadModel("better").finally(() => { loading = null; });
+    await loading;
+  } catch (err) {
+    console.warn("[ai] background upgrade stopped:", err);
+    if (status.state === "ready") set({ ...status, upgrading: null });
+  }
 }
 
 /** Re-open the model on later visits if the visitor already turned it on (it loads from cache). */
