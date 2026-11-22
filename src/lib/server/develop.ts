@@ -7,6 +7,7 @@ import { toMusicProfile } from "../engine/music";
 import { hashString } from "../engine/random";
 import { parseMusicLink } from "../music-link";
 import { mediaUrl, ownsKey } from "./storage";
+import { claudeTitle } from "./ai";
 
 const unit = z.number().min(0).max(1);
 const MediaIn = z.object({ key: z.string().min(1).max(300), contentType: z.string().max(100), size: z.number().int().nonnegative() });
@@ -125,6 +126,14 @@ export async function developEntry(input: EntryInputT, opts: DevelopOptions): Pr
   const now = new Date().toISOString();
   const manualTitle = input.title?.trim();
   const keepLocked = opts.previous?.titleLocked && !input.title;
+  // Untitled real entries are named by Claude when AI is configured; demos and failures keep the local title.
+  if (!manualTitle && !keepLocked && !opts.demo) {
+    const named = await claudeTitle(input.text);
+    if (named) {
+      analysis.title = named;
+      notes.push("The title was written by AI from your words.");
+    }
+  }
   return {
     id: opts.id,
     owner: opts.owner,

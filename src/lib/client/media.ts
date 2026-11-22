@@ -9,6 +9,8 @@ export interface AppConfig {
   storage: "blob" | "local";
   database: "postgres" | "blob" | "file";
   persistent: boolean;
+  /** Claude is configured on the server (ANTHROPIC_API_KEY is set). */
+  ai: boolean;
 }
 
 export interface PreparedPhoto {

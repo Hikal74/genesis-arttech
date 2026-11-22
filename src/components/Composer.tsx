@@ -11,8 +11,7 @@ import { countMood } from "@/lib/analysis/mood";
 import { blendThemes } from "@/lib/engine/presets";
 import { faceFor } from "@/lib/engine/typeface";
 import { aiMusic, aiTitle, type TrackHit } from "@/lib/ai";
-import { autoStartAi, getAiStatus } from "@/lib/ai/engine";
-import { AiSwitch, useAiStatus } from "./AiSwitch";
+import { useAiStatus } from "@/lib/ai/engine";
 import { setMascotContext } from "@/lib/client/mascot-context";
 import { SongSearch } from "./SongSearch";
 import { VoiceInput } from "./VoiceInput";
@@ -92,9 +91,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     ? {}
     : {}) as React.CSSProperties;
   useEffect(() => { setMascotContext(text); }, [text]);
-  // Once someone is really writing, quietly get the on-device AI ready (desktop, good connection, not turned off).
-  const writing = text.trim().length > 40;
-  useEffect(() => { if (writing) autoStartAi(); }, [writing]);
   useEffect(() => () => setMascotContext(""), []);
 
   const [wish, setWish] = useState("");
@@ -129,7 +125,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
   const pickSong = useCallback(async (): Promise<{ title: string; artist: string; reason: string } | null> => {
     if (text.trim().length < 12) { setError("Write a little about the day first, so the AI knows what to pick."); return null; }
-    autoStartAi();
     setPicking(true);
     setError(null);
     try {
@@ -161,7 +156,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
   const suggestTitle = async () => {
     if (text.trim().length < 12) return setError("Write a little about the day first.");
-    autoStartAi();
     setNaming(true);
     try {
       setTitle((await aiTitle(text)).title);
@@ -249,13 +243,8 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
     setError(null);
     if (!canDevelop || !music) return;
     try {
-      let finalTitle: string | null = title.trim() || null;
-      // With on-device AI on, name an untitled day here; otherwise the server names it from the words.
-      if (!finalTitle && !editing && getAiStatus().state === "ready") {
-        setPhase({ step: "Finding a name for the day", progress: 0.02 });
-        const named = await aiTitle(text);
-        if (named.source === "ai") finalTitle = named.title;
-      }
+      // An empty title is named on the server (by Claude when configured, otherwise from the words).
+      const finalTitle: string | null = title.trim() || null;
       const total = photos.filter((p) => !p.media).length + (music.kind === "file" && !music.media ? 1 : 0) + (narration && !narration.media ? 1 : 0);
       let done = 0;
       const step = (label: string) => setPhase({ step: label, progress: total ? done / (total + 1) : 0.1 });
@@ -418,7 +407,6 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
           {musicTab === "ai" && (
             <div className={s.musicPane}>
-              <AiSwitch compact />
               <input className="input" value={wish} maxLength={300} onChange={(e) => setWish(e.target.value)} placeholder="Describe the music you want — e.g. “calm piano for a rainy evening” (optional)" aria-label="Describe the music you want" />
               <div className={s.aiRow}>
                 <button type="button" className="btn btn-primary btn-small" onClick={pickSong} disabled={picking}>
