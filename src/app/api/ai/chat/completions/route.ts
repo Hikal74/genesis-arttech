@@ -1,18 +1,17 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod/v4";
-import { looksLikeExtraction } from "@/lib/ai/guard";
+import { looksLikeExtraction, scrubReply } from "@/lib/ai/guard";
 import { REFUSAL_SECRET } from "@/lib/ai/prompts";
-import { aiEnabled, buildRequest, claude, logUsage, PRESETS, replyText, type PresetName } from "@/lib/server/ai";
+import { AllBusyError, aiEnabled, generate, PRESETS, type PresetName, type Turn } from "@/lib/server/ai";
 import { rateLimited } from "@/lib/server/ratelimit";
 
 /*
- * POST /api/ai/chat/completions — OpenAI-compatible request and response shapes, backed by Claude.
+ * POST /api/ai/chat/completions — OpenAI-compatible request and response shapes.
  *
  *   { "model": "felt-chat" | "felt-title" | "felt-music", "messages": [...], "stream": true }
  *
- * `model` names a server-side preset (its system prompt and limits live on the server), so the
- * browser never chooses the real model or sees the prompt. A `system` message from the browser is
- * treated as diary context for felt-chat only. Streaming uses OpenAI-style SSE chunks + `[DONE]`.
+ * `model` names a server-side preset (prompt and limits live on the server). The server picks the
+ * actual AI provider from its failover chain (see lib/server/ai.ts). A `system` message from the
+ * browser is treated as diary context for felt-chat only. Streaming uses OpenAI-style SSE + `[DONE]`.
  */
 
 export const runtime = "nodejs";
@@ -26,25 +25,21 @@ const Body = z.object({
   model: z.enum(Object.keys(PRESETS) as [PresetName, ...PresetName[]]).default("felt-chat"),
   messages: z.array(Message).min(1).max(40),
   stream: z.boolean().default(false),
-  max_tokens: z.number().int().min(16).max(4000).optional(),
 });
 
-const LIMITS: Record<PresetName, number> = { "felt-chat": 40, "felt-title": 30, "felt-music": 30 };
+// Per visitor, per 10 minutes. Stops one person from using up the shared free quotas.
+const LIMITS: Record<PresetName, number> = { "felt-chat": 30, "felt-title": 20, "felt-music": 20 };
+const BUSY = "The AI is very busy right now. Please try again in a minute.";
+const DECLINED = "Sorry, I can't help with that one.";
 
 function apiError(status: number, message: string, type: string) {
   return Response.json({ error: { message, type } }, { status, headers: { "cache-control": "no-store" } });
 }
 
-const completion = (id: string, model: string, content: string, finish: string, usage?: { prompt_tokens: number; completion_tokens: number }) => ({
-  id,
-  object: "chat.completion",
-  created: Math.floor(Date.now() / 1000),
-  model,
-  choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: finish }],
-  ...(usage ? { usage: { ...usage, total_tokens: usage.prompt_tokens + usage.completion_tokens } } : {}),
-});
+const usageOf = (input: number | null, output: number | null) =>
+  input != null && output != null ? { prompt_tokens: input, completion_tokens: output, total_tokens: input + output } : undefined;
 
-const finishReason = (stop: string | null) => (stop === "max_tokens" ? "length" : stop === "refusal" ? "content_filter" : "stop");
+const finishOf = (f: string) => (f === "length" || f === "max_tokens" ? "length" : f === "refusal" || f === "content_filter" ? "content_filter" : "stop");
 
 export async function POST(request: Request) {
   if (!aiEnabled()) return apiError(503, "AI is not configured on this server.", "ai_disabled");
@@ -56,70 +51,54 @@ export async function POST(request: Request) {
     return apiError(400, err instanceof z.ZodError ? err.issues[0]?.message ?? "Invalid request" : "Invalid JSON", "invalid_request_error");
   }
   if (rateLimited(request, `ai:${body.model}`, LIMITS[body.model], 10 * 60 * 1000)) {
-    return apiError(429, "Too many requests. Please wait a few minutes.", "rate_limit_error");
+    return apiError(429, "You've sent a lot of requests. Please wait a few minutes.", "rate_limit_error");
   }
 
-  // Diary context arrives as system messages; the conversation itself must end with the user.
+  // Diary context arrives as system messages; keep only recent turns (fewer tokens = more headroom on free tiers).
   const context = body.messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n") || null;
-  const turns = body.messages.filter((m) => m.role !== "system").slice(-24) as Anthropic.Beta.BetaMessageParam[];
+  const turns = body.messages.filter((m) => m.role !== "system").slice(-10) as Turn[];
+  while (turns[0]?.role === "assistant") turns.shift();
   const last = turns.at(-1);
   if (!last || last.role !== "user") return apiError(400, "The last message must come from the user.", "invalid_request_error");
-  while (turns[0]?.role === "assistant") turns.shift();
 
   const id = `chatcmpl-${crypto.randomUUID()}`;
   const preset = body.model;
+  const created = Math.floor(Date.now() / 1000);
+  const chunk = (delta: Record<string, string>, finish: string | null, extra?: object) => ({ id, object: "chat.completion.chunk", created, model: preset, choices: [{ index: 0, delta, finish_reason: finish }], ...extra });
 
-  // Obvious attempts to extract instructions or keys never reach the model.
-  if (typeof last.content === "string" && looksLikeExtraction(last.content)) {
-    if (!body.stream) return Response.json(completion(id, preset, REFUSAL_SECRET, "stop"));
-    return sse((send) => {
-      send({ id, object: "chat.completion.chunk", model: preset, choices: [{ index: 0, delta: { role: "assistant", content: REFUSAL_SECRET }, finish_reason: null }] });
-      send({ id, object: "chat.completion.chunk", model: preset, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] });
-    });
+  // Obvious attempts to extract instructions or keys never reach a model.
+  if (looksLikeExtraction(last.content)) {
+    if (!body.stream) return Response.json({ id, object: "chat.completion", created, model: preset, choices: [{ index: 0, message: { role: "assistant", content: REFUSAL_SECRET }, finish_reason: "stop" }] });
+    return sse((send) => { send(chunk({ role: "assistant", content: REFUSAL_SECRET }, null)); send(chunk({}, "stop")); });
   }
-
-  const params = buildRequest(preset, turns, context, body.max_tokens);
-  const started = Date.now();
 
   if (!body.stream) {
     try {
-      const message = await claude().beta.messages.create(params, { signal: request.signal });
-      logUsage(preset, message, started);
-      const text = replyText(message) ?? "Sorry, I can't help with that one.";
-      return Response.json(completion(id, preset, text, finishReason(message.stop_reason), {
-        prompt_tokens: message.usage.input_tokens,
-        completion_tokens: message.usage.output_tokens,
-      }), { headers: { "cache-control": "no-store" } });
+      const r = await generate(preset, turns, context, null, request.signal);
+      const text = scrubReply(r.text, 4000) || DECLINED;
+      return Response.json(
+        { id, object: "chat.completion", created, model: preset, choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: finishOf(r.finish) }], usage: usageOf(r.inputTokens, r.outputTokens) },
+        { headers: { "cache-control": "no-store", "x-ai-provider": r.provider } },
+      );
     } catch (err) {
-      return upstreamError(err);
+      if (err instanceof AllBusyError) return apiError(503, BUSY, "overloaded");
+      console.error("[ai] request failed:", err);
+      return apiError(502, "The AI had a problem. Please try again.", "api_error");
     }
   }
 
   return sse(async (send) => {
-    const stream = claude().beta.messages.stream(params, { signal: request.signal });
+    let first = true;
     try {
-      let first = true;
-      for await (const event of stream) {
-        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-          send({ id, object: "chat.completion.chunk", model: preset, choices: [{ index: 0, delta: first ? { role: "assistant", content: event.delta.text } : { content: event.delta.text }, finish_reason: null }] });
-          first = false;
-        }
-      }
-      const message = await stream.finalMessage();
-      logUsage(preset, message, started);
-      if (message.stop_reason === "refusal" && first) {
-        send({ id, object: "chat.completion.chunk", model: preset, choices: [{ index: 0, delta: { role: "assistant", content: "Sorry, I can't help with that one." }, finish_reason: null }] });
-      }
-      send({
-        id, object: "chat.completion.chunk", model: preset,
-        choices: [{ index: 0, delta: {}, finish_reason: finishReason(message.stop_reason) }],
-        usage: { prompt_tokens: message.usage.input_tokens, completion_tokens: message.usage.output_tokens, total_tokens: message.usage.input_tokens + message.usage.output_tokens },
-      });
+      const r = await generate(preset, turns, context, (delta) => {
+        send(chunk(first ? { role: "assistant", content: delta } : { content: delta }, null));
+        first = false;
+      }, request.signal);
+      send(chunk({}, finishOf(r.finish), { usage: usageOf(r.inputTokens, r.outputTokens) }));
     } catch (err) {
       if (request.signal.aborted) return;
-      console.error("[ai] stream failed:", err instanceof Anthropic.APIError ? `${err.status} ${err.message}` : err);
-      const { message, type } = describe(err);
-      send({ error: { message, type } });
+      if (!(err instanceof AllBusyError)) console.error("[ai] stream failed:", err);
+      send({ error: { message: err instanceof AllBusyError ? BUSY : "The AI stopped unexpectedly. Please try again.", type: err instanceof AllBusyError ? "overloaded" : "api_error" } });
     }
   });
 }
@@ -141,18 +120,4 @@ function sse(run: (send: (data: unknown) => void) => void | Promise<void>) {
   return new Response(body, {
     headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", "x-accel-buffering": "no" },
   });
-}
-
-function describe(err: unknown): { status: number; message: string; type: string } {
-  if (err instanceof Anthropic.RateLimitError) return { status: 429, message: "The AI is busy right now. Try again in a moment.", type: "rate_limit_error" };
-  if (err instanceof Anthropic.AuthenticationError) return { status: 503, message: "The AI key on the server is not valid.", type: "ai_disabled" };
-  if (err instanceof Anthropic.BadRequestError) return { status: 400, message: "The AI could not process that request.", type: "invalid_request_error" };
-  if (err instanceof Anthropic.APIError) return { status: 502, message: "The AI service had a problem. Please try again.", type: "api_error" };
-  return { status: 502, message: "Could not reach the AI service. Please try again.", type: "api_error" };
-}
-
-function upstreamError(err: unknown) {
-  console.error("[ai] request failed:", err instanceof Anthropic.APIError ? `${err.status} ${err.message}` : err);
-  const { status, message, type } = describe(err);
-  return apiError(status, message, type);
 }

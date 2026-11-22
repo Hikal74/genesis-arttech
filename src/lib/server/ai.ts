@@ -4,115 +4,246 @@ import { CHAT_SYSTEM, MUSIC_SYSTEM, TITLE_SYSTEM } from "../ai/prompts";
 import { cleanInput, fence, scrubReply } from "../ai/guard";
 
 /*
- * Felt's AI backend: Claude through the official Anthropic SDK.
- * Credentials come only from the environment (ANTHROPIC_API_KEY), never from code or the browser.
- * Model and effort are configurable, so the model can change without touching the frontend.
+ * Felt's AI backend: one request goes to the first provider that can answer it.
+ *
+ * Free tiers have small per-model quotas (requests/minute, tokens/minute, requests/day), and a single
+ * model can run out during a busy demo. Each provider below has its own separate quota, so they are
+ * tried in order; one that hits its limit is skipped until it resets (Retry-After), and the request
+ * moves straight to the next. Keys come only from environment variables and never reach the browser.
+ *
+ * Order: Claude (only if ANTHROPIC_API_KEY is set) → Groq gpt-oss-120b → Gemini Flash-Lite →
+ *        Groq gpt-oss-20b → Mistral (only if MISTRAL_API_KEY is set).
  */
 
-type Effort = "low" | "medium" | "high" | "xhigh" | "max";
-const EFFORTS: Effort[] = ["low", "medium", "high", "xhigh", "max"];
+export type PresetName = "felt-chat" | "felt-title" | "felt-music";
+export type Turn = { role: "user" | "assistant"; content: string };
 
-export const AI_MODEL = process.env.CLAUDE_MODEL?.trim() || "claude-opus-5-5";
-const envEffort = process.env.CLAUDE_EFFORT?.trim() as Effort | undefined;
-export const AI_EFFORT: Effort = envEffort && EFFORTS.includes(envEffort) ? envEffort : "low";
+/** System prompt and output limit per preset (limits include any reasoning tokens). Kept small: fewer tokens = more requests per minute on free tiers. */
+export const PRESETS: Record<PresetName, { system: string; maxTokens: number; contextAllowed: boolean }> = {
+  "felt-chat": { system: process.env.FELT_CHAT_SYSTEM_PROMPT?.trim() || CHAT_SYSTEM, maxTokens: 800, contextAllowed: true },
+  "felt-title": { system: TITLE_SYSTEM, maxTokens: 300, contextAllowed: false },
+  "felt-music": { system: MUSIC_SYSTEM, maxTokens: 1000, contextAllowed: false },
+};
 
-export const aiEnabled = () => Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+interface Provider {
+  id: string;
+  kind: "claude" | "openai";
+  model: string;
+  url?: string;
+  key: string;
+  extra?: Record<string, unknown>;
+}
 
-// Server-side refusal fallback (re-runs a declined request on another model inside the same call).
-// Only these models accept it; for anything else the parameter is left out.
+const env = (name: string) => process.env[name]?.trim() || "";
+
+export function providers(): Provider[] {
+  const list: Provider[] = [];
+  if (env("ANTHROPIC_API_KEY")) list.push({ id: "claude", kind: "claude", model: env("CLAUDE_MODEL") || "claude-opus-5-5", key: env("ANTHROPIC_API_KEY") });
+
+  const groqKey = env("GROQ_API_KEY");
+  const groqModels = (env("GROQ_MODELS") || "openai/gpt-oss-120b,openai/gpt-oss-20b").split(",").map((m) => m.trim()).filter(Boolean);
+  const groq = (model: string): Provider => ({
+    id: `groq:${model}`, kind: "openai", model, key: groqKey,
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    // gpt-oss models think before answering; keep that short so answers come fast and use fewer tokens.
+    extra: model.includes("gpt-oss") ? { reasoning_effort: "low" } : undefined,
+  });
+  if (groqKey && groqModels[0]) list.push(groq(groqModels[0]));
+
+  if (env("GEMINI_API_KEY")) {
+    list.push({
+      id: "gemini", kind: "openai", model: env("GEMINI_MODEL") || "gemini-flash-lite-latest", key: env("GEMINI_API_KEY"),
+      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    });
+  }
+  if (groqKey) for (const m of groqModels.slice(1)) list.push(groq(m));
+
+  if (env("MISTRAL_API_KEY")) {
+    list.push({ id: "mistral", kind: "openai", model: env("MISTRAL_MODEL") || "mistral-small-latest", key: env("MISTRAL_API_KEY"), url: "https://api.mistral.ai/v1/chat/completions" });
+  }
+  return list;
+}
+
+export const aiEnabled = () => providers().length > 0;
+
+/* ---------- cooldowns: a provider that ran out of quota is skipped until it resets ---------- */
+
+const coolUntil = new Map<string, number>();
+const cooling = (id: string) => (coolUntil.get(id) ?? 0) > Date.now();
+function coolDown(id: string, ms: number) {
+  coolUntil.set(id, Date.now() + Math.min(Math.max(ms, 5_000), 60 * 60 * 1000));
+}
+
+export class ProviderError extends Error {
+  constructor(message: string, readonly status: number, readonly retryAfterMs: number | null = null) {
+    super(message);
+  }
+}
+export class AllBusyError extends Error {}
+
+function retryAfter(res: Response): number | null {
+  const ra = res.headers.get("retry-after");
+  if (!ra) return null;
+  const secs = Number(ra);
+  if (Number.isFinite(secs)) return secs * 1000;
+  const at = Date.parse(ra);
+  return Number.isFinite(at) ? at - Date.now() : null;
+}
+
+/* ---------- one call to an OpenAI-compatible provider (Groq, Gemini, Mistral) ---------- */
+
+async function callOpenAI(p: Provider, system: string, turns: Turn[], maxTokens: number, onText: ((delta: string) => void) | null, signal: AbortSignal) {
+  const res = await fetch(p.url!, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${p.key}` },
+    body: JSON.stringify({ model: p.model, messages: [{ role: "system", content: system }, ...turns], max_tokens: maxTokens, stream: Boolean(onText), ...p.extra }),
+    signal,
+  });
+  if (!res.ok) {
+    const detail = (await res.text().catch(() => "")).slice(0, 200);
+    throw new ProviderError(`${p.id} ${res.status}: ${detail}`, res.status, retryAfter(res));
+  }
+
+  if (!onText) {
+    const json = await res.json();
+    const choice = json.choices?.[0];
+    return {
+      text: (choice?.message?.content as string | undefined) ?? "",
+      finish: (choice?.finish_reason as string | undefined) ?? "stop",
+      inputTokens: json.usage?.prompt_tokens ?? null,
+      outputTokens: json.usage?.completion_tokens ?? null,
+    };
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "", text = "", finish = "stop";
+  let inputTokens: number | null = null, outputTokens: number | null = null;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let cut: number;
+    while ((cut = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, cut).trim();
+      buffer = buffer.slice(cut + 1);
+      if (!line.startsWith("data:")) continue;
+      const data = line.slice(5).trim();
+      if (data === "[DONE]") continue;
+      let chunk: { choices?: { delta?: { content?: string }; finish_reason?: string | null }[]; usage?: { prompt_tokens?: number; completion_tokens?: number }; x_groq?: { usage?: { prompt_tokens?: number; completion_tokens?: number } } };
+      try { chunk = JSON.parse(data); } catch { continue; }
+      const piece = chunk.choices?.[0]?.delta?.content;
+      if (piece) { text += piece; onText(piece); }
+      if (chunk.choices?.[0]?.finish_reason) finish = chunk.choices[0].finish_reason!;
+      const usage = chunk.usage ?? chunk.x_groq?.usage;
+      if (usage) { inputTokens = usage.prompt_tokens ?? inputTokens; outputTokens = usage.completion_tokens ?? outputTokens; }
+    }
+  }
+  return { text, finish, inputTokens, outputTokens };
+}
+
+/* ---------- one call to Claude (official SDK), used first when ANTHROPIC_API_KEY is set ---------- */
+
 const FALLBACK_MODELS = new Set(["claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5", "claude-fable-5-1", "claude-fable-5-2"]);
+let anthropic: Anthropic | null = null;
 
-let client: Anthropic | null = null;
-export const claude = () => (client ??= new Anthropic({ maxRetries: 2, timeout: 60_000 }));
-
-/** Named presets: the browser picks one by name; the system prompt and limits stay here. */
-export const PRESETS = {
-  "felt-chat": { system: process.env.FELT_CHAT_SYSTEM_PROMPT?.trim() || CHAT_SYSTEM, maxTokens: 4000, contextAllowed: true },
-  "felt-title": { system: TITLE_SYSTEM, maxTokens: 1500, contextAllowed: false },
-  "felt-music": { system: MUSIC_SYSTEM, maxTokens: 3000, contextAllowed: false },
-} as const;
-export type PresetName = keyof typeof PRESETS;
-
-/** Structured output for song suggestions: the API guarantees JSON matching this schema. */
-export const MUSIC_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["songs"],
+const MUSIC_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["songs"],
   properties: {
     songs: {
       type: "array",
       items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["title", "artist", "bpm", "energy", "mode", "reason"],
-        properties: {
-          title: { type: "string" },
-          artist: { type: "string" },
-          bpm: { type: "number" },
-          energy: { type: "number" },
-          mode: { type: "string", enum: ["major", "minor"] },
-          reason: { type: "string" },
-        },
+        type: "object", additionalProperties: false, required: ["title", "artist", "bpm", "energy", "mode", "reason"],
+        properties: { title: { type: "string" }, artist: { type: "string" }, bpm: { type: "number" }, energy: { type: "number" }, mode: { type: "string", enum: ["major", "minor"] }, reason: { type: "string" } },
       },
     },
   },
 } as const;
 
-/** Builds the request body shared by streaming and non-streaming calls. */
-export function buildRequest(preset: PresetName, messages: Anthropic.Beta.BetaMessageParam[], context: string | null, maxTokens?: number) {
-  const p = PRESETS[preset];
-  const system = context && p.contextAllowed ? `${p.system}\n\nToday's diary text so far (context only):\n${fence("diary_text", cleanInput(context, 3000))}` : p.system;
-  const fallback = FALLBACK_MODELS.has(AI_MODEL);
-  return {
-    model: AI_MODEL,
-    max_tokens: Math.min(maxTokens ?? p.maxTokens, p.maxTokens),
+async function callClaude(p: Provider, preset: PresetName, system: string, turns: Turn[], maxTokens: number, onText: ((delta: string) => void) | null, signal: AbortSignal) {
+  anthropic ??= new Anthropic({ apiKey: p.key, maxRetries: 0, timeout: 45_000 });
+  const params = {
+    model: p.model,
+    max_tokens: Math.max(maxTokens, 2000),
     system,
-    messages,
+    messages: turns,
     output_config: {
-      effort: AI_EFFORT,
+      effort: "low" as const,
       ...(preset === "felt-music" ? { format: { type: "json_schema" as const, schema: MUSIC_SCHEMA } } : {}),
     },
-    ...(fallback ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
+    ...(FALLBACK_MODELS.has(p.model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
   } satisfies Anthropic.Beta.MessageCreateParamsNonStreaming;
-}
-
-/** Plain text of a finished reply, scrubbed; null when Claude declined. */
-export function replyText(message: Anthropic.Beta.BetaMessage): string | null {
-  if (message.stop_reason === "refusal") return null;
-  const text = message.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
-  return text ? scrubReply(text, 4000) : null;
-}
-
-/** One JSON line per call in the server logs: what it cost, without any diary text. */
-export function logUsage(preset: string, message: Pick<Anthropic.Beta.BetaMessage, "model" | "usage" | "stop_reason">, startedAt: number) {
-  const u = message.usage;
-  console.info(JSON.stringify({
-    event: "ai_usage",
-    preset,
-    model: message.model,
-    input_tokens: u.input_tokens,
-    output_tokens: u.output_tokens,
-    cache_read_tokens: u.cache_read_input_tokens ?? 0,
-    stop_reason: message.stop_reason,
-    ms: Date.now() - startedAt,
-  }));
-}
-
-/** Server-side title for a new memory. Returns null on any failure so the local title is used. */
-export async function claudeTitle(text: string): Promise<string | null> {
-  if (!aiEnabled()) return null;
-  const started = Date.now();
   try {
-    const message = await claude().beta.messages.create(
-      buildRequest("felt-title", [{ role: "user", content: fence("diary_text", cleanInput(text, 4000)) }], null),
-      { timeout: 15_000, maxRetries: 1 },
-    );
-    logUsage("felt-title", message, started);
-    const line = replyText(message)?.split("\n").find((l) => l.trim()) ?? "";
-    const words = line.replace(/["'«»“”*#]/g, "").replace(/[.!,;:]+$/, "").trim().split(/\s+/).filter(Boolean);
-    return words.length >= 3 && words.length <= 8 ? words.slice(0, 7).join(" ") : null;
+    let message: Anthropic.Beta.BetaMessage;
+    if (onText) {
+      const stream = anthropic.beta.messages.stream(params, { signal });
+      stream.on("text", (delta) => onText(delta));
+      message = await stream.finalMessage();
+    } else {
+      message = await anthropic.beta.messages.create(params, { signal });
+    }
+    const text = message.stop_reason === "refusal" ? "" : message.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    return { text, finish: message.stop_reason ?? "end_turn", inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens };
   } catch (err) {
-    console.error("[ai] title failed:", err instanceof Anthropic.APIError ? `${err.status} ${err.message}` : err);
+    if (err instanceof Anthropic.APIError) throw new ProviderError(`claude ${err.status}: ${err.message.slice(0, 160)}`, err.status ?? 500, null);
+    throw err;
+  }
+}
+
+/* ---------- the failover chain ---------- */
+
+export interface Generated { text: string; finish: string; provider: string; inputTokens: number | null; outputTokens: number | null }
+
+/**
+ * Runs a preset on the first available provider. With `onText`, the reply streams; a provider that
+ * fails before sending any text is replaced by the next one, so the visitor never notices.
+ */
+export async function generate(preset: PresetName, turns: Turn[], context: string | null, onText: ((delta: string) => void) | null, signal: AbortSignal): Promise<Generated> {
+  const p = PRESETS[preset];
+  const system = context && p.contextAllowed ? `${p.system}\n\nToday's diary text so far (context only):\n${fence("diary_text", cleanInput(context, 1500))}` : p.system;
+  const list = providers();
+  if (!list.length) throw new AllBusyError("AI is not configured on this server.");
+
+  const available = list.filter((x) => !cooling(x.id));
+  // If every provider is cooling down, still try the one that resets soonest rather than failing outright.
+  const order = available.length ? available : [...list].sort((a, b) => (coolUntil.get(a.id) ?? 0) - (coolUntil.get(b.id) ?? 0)).slice(0, 1);
+
+  for (const provider of order) {
+    let streamed = false;
+    const forward = onText ? (delta: string) => { streamed = true; onText(delta); } : null;
+    const started = Date.now();
+    const timeout = AbortSignal.timeout(onText ? 45_000 : 25_000);
+    try {
+      const r = provider.kind === "claude"
+        ? await callClaude(provider, preset, system, turns, p.maxTokens, forward, AbortSignal.any([signal, timeout]))
+        : await callOpenAI(provider, system, turns, p.maxTokens, forward, AbortSignal.any([signal, timeout]));
+      if (!r.text.trim()) throw new ProviderError(`${provider.id}: empty reply`, 502);
+      console.info(JSON.stringify({ event: "ai_usage", preset, provider: provider.id, input_tokens: r.inputTokens, output_tokens: r.outputTokens, finish: r.finish, ms: Date.now() - started }));
+      return { ...r, provider: provider.id };
+    } catch (err) {
+      if (signal.aborted) throw err;
+      const status = err instanceof ProviderError ? err.status : 0;
+      const wait = err instanceof ProviderError && err.retryAfterMs != null ? err.retryAfterMs
+        : status === 429 ? 60_000
+        : status === 401 || status === 403 || status === 404 ? 10 * 60_000 // bad key or unknown model: stop hammering it
+        : 20_000;                                                           // timeouts, 5xx, overload
+      coolDown(provider.id, wait);
+      console.warn(JSON.stringify({ event: "ai_failover", preset, provider: provider.id, status, cool_ms: wait, error: err instanceof Error ? err.message.slice(0, 200) : String(err) }));
+      if (streamed) throw err; // part of an answer was already shown; don't splice in another model
+    }
+  }
+  throw new AllBusyError("All AI providers are busy right now.");
+}
+
+/** Server-side title for a new memory. Returns null on any failure so Felt's own title is used. */
+export async function aiTitleFor(text: string): Promise<string | null> {
+  if (!aiEnabled()) return null;
+  try {
+    const r = await generate("felt-title", [{ role: "user", content: fence("diary_text", cleanInput(text, 3000)) }], null, null, AbortSignal.timeout(20_000));
+    const line = scrubReply(r.text, 300).split("\n").find((l) => l.trim()) ?? "";
+    const words = line.replace(/^title:\s*/i, "").replace(/["'«»“”*#]/g, "").replace(/[.!,;:]+$/, "").trim().split(/\s+/).filter(Boolean);
+    return words.length >= 3 && words.length <= 9 ? words.slice(0, 7).join(" ") : null;
+  } catch {
     return null;
   }
 }
