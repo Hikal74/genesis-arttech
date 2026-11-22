@@ -11,8 +11,9 @@ import { cleanInput, fence, scrubReply } from "../ai/guard";
  * tried in order; one that hits its limit is skipped until it resets (Retry-After), and the request
  * moves straight to the next. Keys come only from environment variables and never reach the browser.
  *
- * Order: Claude (only if ANTHROPIC_API_KEY is set) → Groq gpt-oss-120b → Gemini Flash-Lite →
- *        Groq gpt-oss-20b → Mistral (only if MISTRAL_API_KEY is set).
+ * Order: xAI Grok (paid; only when FELT_PAID_AI=on and XAI_API_KEY is set) → Claude (only if
+ *        ANTHROPIC_API_KEY is set) → Groq gpt-oss-120b → Gemini Flash-Lite → Groq gpt-oss-20b →
+ *        Mistral (only if MISTRAL_API_KEY is set). The free providers stay as backups behind the paid one.
  */
 
 export type PresetName = "felt-chat" | "felt-title" | "felt-music";
@@ -38,6 +39,10 @@ const env = (name: string) => process.env[name]?.trim() || "";
 
 export function providers(): Provider[] {
   const list: Provider[] = [];
+  // Paid Grok is switched on deliberately (FELT_PAID_AI=on), so the credit is spent only when wanted, e.g. for judging.
+  if (env("XAI_API_KEY") && env("FELT_PAID_AI") === "on") {
+    list.push({ id: "xai", kind: "openai", model: env("XAI_MODEL") || "grok-4.3", key: env("XAI_API_KEY"), url: "https://api.x.ai/v1/chat/completions" });
+  }
   if (env("ANTHROPIC_API_KEY")) list.push({ id: "claude", kind: "claude", model: env("CLAUDE_MODEL") || "claude-opus-5-5", key: env("ANTHROPIC_API_KEY") });
 
   const groqKey = env("GROQ_API_KEY");
