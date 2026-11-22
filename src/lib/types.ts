@@ -234,9 +234,7 @@ export interface TrackHit {
   image: string | null;
   url: string;
   embedUrl: string | null;
-  spotifyUrl: string;
   previewUrl: string | null;
   durationMs: number | null;
   explicit: boolean;
-  source: "spotify" | "itunes";
 }

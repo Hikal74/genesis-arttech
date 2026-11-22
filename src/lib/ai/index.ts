@@ -10,8 +10,8 @@ import { REFUSAL_SECRET } from "./prompts";
 export type Source = "ai" | "local";
 export type { TrackHit };
 
-export async function searchSongs(q: string, limit = 8, signal?: AbortSignal): Promise<{ provider: "spotify" | "itunes"; tracks: TrackHit[] }> {
-  const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=${limit}`, { signal });
+export async function searchSongs(q: string, limit = 8, signal?: AbortSignal): Promise<{ tracks: TrackHit[] }> {
+  const res = await fetch(`/api/songs/search?q=${encodeURIComponent(q)}&limit=${limit}`, { signal });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? "Search failed");
   return json;

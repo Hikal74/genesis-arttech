@@ -8,7 +8,7 @@ const time = (ms: number | null) => (ms ? `${Math.floor(ms / 60000)}:${String(Ma
 
 export function SongSearch({ onPick, selectedId }: { onPick: (t: TrackHit) => void; selectedId?: string | null }) {
   const [q, setQ] = useState("");
-  const [state, setState] = useState<{ status: "idle" | "loading" | "done" | "error"; tracks: TrackHit[]; provider?: string; error?: string }>({ status: "idle", tracks: [] });
+  const [state, setState] = useState<{ status: "idle" | "loading" | "done" | "error"; tracks: TrackHit[]; error?: string }>({ status: "idle", tracks: [] });
 
   useEffect(() => {
     const query = q.trim();
@@ -18,7 +18,7 @@ export function SongSearch({ onPick, selectedId }: { onPick: (t: TrackHit) => vo
       setState((p) => ({ ...p, status: "loading" }));
       try {
         const out = await searchSongs(query, 8, ctrl.signal);
-        setState({ status: "done", tracks: out.tracks, provider: out.provider });
+        setState({ status: "done", tracks: out.tracks });
       } catch (e) {
         if (!ctrl.signal.aborted) setState({ status: "error", tracks: [], error: e instanceof Error ? e.message : "Search failed" });
       }
@@ -26,11 +26,11 @@ export function SongSearch({ onPick, selectedId }: { onPick: (t: TrackHit) => vo
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [q]);
 
-  const view = q.trim().length < 2 ? { status: "idle" as const, tracks: [] as TrackHit[], provider: undefined, error: undefined } : state;
+  const view = q.trim().length < 2 ? { status: "idle" as const, tracks: [] as TrackHit[], error: undefined } : state;
 
   return (
     <div className={s.wrap}>
-      <input className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search Spotify — a song, an artist, a feeling…" aria-label="Search Spotify" maxLength={200} />
+      <input className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search for a song or an artist…" aria-label="Search songs" maxLength={200} />
       {view.status === "loading" && <p className={s.meta}>Searching…</p>}
       {view.status === "error" && <p className="notice error">{view.error}</p>}
       {view.status === "done" && view.tracks.length === 0 && <p className={s.meta}>No songs found — try other words.</p>}
@@ -50,7 +50,6 @@ export function SongSearch({ onPick, selectedId }: { onPick: (t: TrackHit) => vo
           ))}
         </ul>
       )}
-      {view.provider === "itunes" && <p className={s.meta}>Spotify is not connected on this server yet — showing matches from a public catalogue, each linked to Spotify.</p>}
     </div>
   );
 }

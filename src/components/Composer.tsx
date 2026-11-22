@@ -35,7 +35,7 @@ type PhotoItem = {
 
 type FileMusic = { kind: "file"; name: string; file?: File; media?: MediaRef; preview: string; analysis?: AudioAnalysis; status: "processing" | "ready" | "error"; error?: string };
 type LinkPreview = { provider: keyof typeof PROVIDER_LABEL; embedUrl: string | null; title: string | null; artist: string | null; thumbnail: string | null; url: string };
-type LinkMusic = { kind: "link"; url: string; reason?: string; pickedBy?: "ai" | "local"; trackId?: string; spotifyUrl?: string; analysis?: AudioAnalysis; measuring?: boolean; preview: LinkPreview | null; status: "idle" | "loading" | "ready" | "error"; error?: string; feel: MusicFeel };
+type LinkMusic = { kind: "link"; url: string; reason?: string; pickedBy?: "ai" | "local"; trackId?: string; analysis?: AudioAnalysis; measuring?: boolean; preview: LinkPreview | null; status: "idle" | "loading" | "ready" | "error"; error?: string; feel: MusicFeel };
 type Narration = { blob?: Blob; media?: MediaRef; url: string };
 
 const AUDIO_TYPES: Record<string, string> = { mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", aac: "audio/aac", ogg: "audio/ogg", oga: "audio/ogg", webm: "audio/webm", flac: "audio/flac" };
@@ -67,7 +67,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
       feel: m.feel ?? { bpm: null, energy: 0.5, mode: "unknown" },
     };
   });
-  const [musicTab, setMusicTab] = useState<"file" | "link" | "ai" | "spotify">(initial?.music.kind ?? "ai");
+  const [musicTab, setMusicTab] = useState<"file" | "link" | "ai" | "search">(initial?.music.kind ?? "ai");
   const [narration, setNarration] = useState<Narration | null>(initial?.narration ? { media: initial.narration, url: initial.narration.url } : null);
   const [phase, setPhase] = useState<{ step: string; progress: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,8 +104,8 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
 
   const applyTrack = useCallback((tr: TrackHit, extra?: { reason?: string; feel?: MusicFeel; pickedBy?: "ai" | "local" }) => {
     setMusic({
-      kind: "link", url: tr.url, status: "ready", reason: extra?.reason, pickedBy: extra?.pickedBy, trackId: tr.id, spotifyUrl: tr.spotifyUrl,
-      preview: { provider: tr.source === "spotify" ? "spotify" : "apple", embedUrl: tr.embedUrl, title: tr.title, artist: tr.artist, thumbnail: tr.image, url: tr.url },
+      kind: "link", url: tr.url, status: "ready", reason: extra?.reason, pickedBy: extra?.pickedBy, trackId: tr.id,
+      preview: { provider: "apple", embedUrl: tr.embedUrl, title: tr.title, artist: tr.artist, thumbnail: tr.image, url: tr.url },
       feel: extra?.feel ?? { bpm: null, energy: 0.5, mode: "unknown" },
       measuring: Boolean(tr.previewUrl),
     });
@@ -133,8 +133,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
       const feel: MusicFeel = { bpm: Math.round(song.bpm), energy: song.energy, mode: song.mode };
       if (song.track) applyTrack(song.track, { reason: song.reason, feel, pickedBy: song.source });
       else {
-        const url = `https://open.spotify.com/search/${encodeURIComponent(`${song.title} ${song.artist}`)}`;
-        setMusic({ kind: "link", url: "", status: "error", error: "That song could not be found in the catalogue — try again or search.", reason: song.reason, spotifyUrl: url, preview: null, feel });
+        setMusic({ kind: "link", url: "", status: "error", error: "That song could not be found in the catalogue. Try again or search.", reason: song.reason, preview: null, feel });
         return null;
       }
       return { title: song.title, artist: song.artist, reason: song.reason };
@@ -397,7 +396,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
           </header>
           <div className="segmented" role="group" aria-label="Music source">
             <button type="button" aria-pressed={musicTab === "ai"} onClick={() => setMusicTab("ai")}>Pick for me</button>
-            <button type="button" aria-pressed={musicTab === "spotify"} onClick={() => setMusicTab("spotify")}>Search songs</button>
+            <button type="button" aria-pressed={musicTab === "search"} onClick={() => setMusicTab("search")}>Search songs</button>
             <button type="button" aria-pressed={musicTab === "file"} onClick={() => setMusicTab("file")}>Audio file</button>
             <button type="button" aria-pressed={musicTab === "link"} onClick={() => { setMusicTab("link"); if (music?.kind !== "link" || music.reason || music.trackId) setMusic({ kind: "link", url: "", preview: null, status: "idle", feel: { bpm: null, energy: 0.5, mode: "unknown" } }); }}>
               Music link
@@ -420,7 +419,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
             </div>
           )}
 
-          {musicTab === "spotify" && (
+          {musicTab === "search" && (
             <div className={s.musicPane}>
               <SongSearch onPick={(tr) => applyTrack(tr)} selectedId={music?.kind === "link" ? music.trackId : null} />
               {music?.kind === "link" && music.trackId && !music.reason && music.preview && (
@@ -693,7 +692,7 @@ function TrackCard({ music }: { music: LinkMusic }) {
       ) : music.reason && music.feel.bpm ? (
         <p className={s.stats}><span>~{music.feel.bpm} bpm</span><span>{music.feel.mode === "major" ? "bright" : "shadowed"}</span><span>energy {Math.round(music.feel.energy * 100)}%</span><span>estimated</span></p>
       ) : null}
-      {music.spotifyUrl && <a className={s.fine} href={music.spotifyUrl} target="_blank" rel="noreferrer">Open in Spotify ↗</a>}
+      {music.preview?.url && <a className={s.fine} href={music.preview.url} target="_blank" rel="noreferrer">Listen ↗</a>}
     </div>
   );
 }
