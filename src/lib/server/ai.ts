@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { CHAT_SYSTEM, MUSIC_SYSTEM, TITLE_SYSTEM } from "../ai/prompts";
+import { CHAT_SYSTEM, MEMORY_SYSTEM, MUSIC_SYSTEM, TITLE_SYSTEM } from "../ai/prompts";
 import { cleanInput, fence, scrubReply } from "../ai/guard";
 
 /*
@@ -16,7 +16,7 @@ import { cleanInput, fence, scrubReply } from "../ai/guard";
  *        Mistral (only if MISTRAL_API_KEY is set). The free providers stay as backups behind the paid one.
  */
 
-export type PresetName = "felt-chat" | "felt-title" | "felt-music";
+export type PresetName = "felt-chat" | "felt-title" | "felt-music" | "felt-memory";
 export type Turn = { role: "user" | "assistant"; content: string };
 
 /** System prompt and output limit per preset (limits include any reasoning tokens). Kept small: fewer tokens = more requests per minute on free tiers. */
@@ -24,6 +24,7 @@ export const PRESETS: Record<PresetName, { system: string; maxTokens: number; co
   "felt-chat": { system: process.env.FELT_CHAT_SYSTEM_PROMPT?.trim() || CHAT_SYSTEM, maxTokens: 800, contextAllowed: true },
   "felt-title": { system: TITLE_SYSTEM, maxTokens: 300, contextAllowed: false },
   "felt-music": { system: MUSIC_SYSTEM, maxTokens: 1000, contextAllowed: false },
+  "felt-memory": { system: MEMORY_SYSTEM, maxTokens: 500, contextAllowed: false },
 };
 
 interface Provider {
@@ -240,15 +241,24 @@ export async function generate(preset: PresetName, turns: Turn[], context: strin
   throw new AllBusyError("All AI providers are busy right now.");
 }
 
-/** Server-side title for a new memory. Returns null on any failure so Felt's own title is used. */
-export async function aiTitleFor(text: string): Promise<string | null> {
-  if (!aiEnabled()) return null;
+/**
+ * Title and atmosphere line for a new memory, in one AI call (saves quota). Each field is null when the
+ * AI is off, fails or returns something unusable, so Felt's own title and line are kept.
+ */
+export async function aiMemoryWords(text: string): Promise<{ title: string | null; line: string | null }> {
+  const none = { title: null, line: null };
+  if (!aiEnabled()) return none;
   try {
-    const r = await generate("felt-title", [{ role: "user", content: fence("diary_text", cleanInput(text, 3000)) }], null, null, AbortSignal.timeout(20_000));
-    const line = scrubReply(r.text, 300).split("\n").find((l) => l.trim()) ?? "";
-    const words = line.replace(/^title:\s*/i, "").replace(/["'«»“”*#]/g, "").replace(/[.!,;:]+$/, "").trim().split(/\s+/).filter(Boolean);
-    return words.length >= 3 && words.length <= 9 ? words.slice(0, 7).join(" ") : null;
+    const r = await generate("felt-memory", [{ role: "user", content: fence("diary_text", cleanInput(text, 3000)) }], null, null, AbortSignal.timeout(20_000));
+    const json = JSON.parse(r.text.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as { title?: unknown; line?: unknown };
+    const clean = (v: unknown, max: number) => (typeof v === "string" ? scrubReply(v, max).replace(/["«»“”*#]/g, "").trim() : "");
+    const words = clean(json.title, 120).replace(/[.!,;:]+$/, "").split(/\s+/).filter(Boolean);
+    const line = clean(json.line, 240);
+    return {
+      title: words.length >= 3 && words.length <= 9 ? words.slice(0, 7).join(" ") : null,
+      line: line && line.split(/\s+/).length <= 30 ? line : null,
+    };
   } catch {
-    return null;
+    return none;
   }
 }

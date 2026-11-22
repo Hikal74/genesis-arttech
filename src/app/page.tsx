@@ -20,7 +20,7 @@ const FEATURES = [
   ["/archive", "Mood calendar", "Every entry you wrote, coloured by how the day felt. Click a day to open it."],
   ["/archive", "Postcards and Stories", "Save any day as a postcard, or as a 9:16 image ready for an Instagram Story."],
   ["/new", "Voice typing", "Speak instead of typing, in English, Russian or Kazakh."],
-  ["/new", "Private AI helper", "An optional AI model that runs inside your browser. It can suggest a title, a song or a writing prompt."],
+  ["/new", "AI helper", "When AI is switched on, it names your day, describes its atmosphere, suggests songs and answers questions in a chat."],
   ["/archive", "No account needed", "Your diary is tied to a private key stored in your browser. Nothing is public."],
 ];
 

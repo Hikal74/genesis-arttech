@@ -526,7 +526,7 @@ export function Composer({ config, initial, draft }: { config: AppConfig; initia
             <input className="input" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder={editing && initial ? initial.title : aiReady ? "Leave empty — AI will name it for you" : "Leave empty — Felt names it from your words"} />
           </label>
 
-          <p className={s.fine}>Photographs and music are analysed in your browser. When switched on, AI runs on your own device after a one-time download — your words never leave the browser. Song searches only send the search words to a music catalogue.</p>
+          <p className={s.fine}>Photographs and music are analysed in your browser. When AI is switched on, the text you write is sent to an AI service to name the day, describe its atmosphere and suggest songs. Song searches only send the search words to a music catalogue.</p>
 
           {!config.persistent && <p className="notice">Storage on this deployment is temporary. Connect a Vercel Blob store to keep memories.</p>}
           {error && <p className="notice error" role="alert">{error}</p>}
@@ -687,7 +687,7 @@ function TrackCard({ music }: { music: LinkMusic }) {
     <div className={s.linkCard}>
       {p.embedUrl && <iframe src={p.embedUrl} title="Song preview" className={s.embed} allow="autoplay; encrypted-media; clipboard-write" loading="lazy" />}
       <p className={s.songName}>{[p.title, p.artist].filter(Boolean).join(" — ")}</p>
-      {music.reason && <p className={s.fine}>{music.pickedBy === "ai" ? "Chosen by the on-device AI: " : "Chosen from the mood of your words (AI is off): "}{music.reason}</p>}
+      {music.reason && <p className={s.fine}>{music.pickedBy === "ai" ? "Chosen by AI: " : "Chosen from the mood of your words: "}{music.reason}</p>}
       {music.measuring ? (
         <p className={s.fine}>Listening to the 30-second preview — measuring tempo, key and energy…</p>
       ) : music.analysis ? (

@@ -47,6 +47,9 @@ export function FeltChat() {
     }
   };
 
+  // No AI configured on the server: show nothing rather than a chat that can't answer.
+  if (status.state !== "ready") return null;
+
   return (
     <>
       <button type="button" className={s.launcher} onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="felt-chat">
@@ -59,12 +62,11 @@ export function FeltChat() {
           <header className={s.head}>
             <div>
               <h2 className={s.title}>Felt AI</h2>
-              <p className={s.sub}>Powered by Claude. Messages go to Felt’s server only to get a reply and are not saved.</p>
+              <p className={s.sub}>Messages go through Felt’s server to an AI service only to get a reply. Felt does not save them.</p>
             </div>
             <button type="button" className={s.close} onClick={() => setOpen(false)} aria-label="Close chat">×</button>
           </header>
 
-          {status.state === "off" && <p className={s.status}>The AI isn’t set up on this server yet, so the chat is unavailable.</p>}
 
           <div className={s.list} ref={list}>
             {msgs.length === 0 && (
@@ -83,13 +85,12 @@ export function FeltChat() {
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={status.state === "off" ? "AI chat is unavailable" : "Write a message…"}
+              placeholder="Write a message…"
               maxLength={1500}
-              disabled={status.state === "off"}
               aria-label="Message"
               autoFocus
             />
-            <button type="submit" className={s.send} disabled={status.state === "off" || busy || !draft.trim()}>Send</button>
+            <button type="submit" className={s.send} disabled={busy || !draft.trim()}>Send</button>
           </form>
         </section>
       )}

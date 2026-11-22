@@ -28,7 +28,7 @@ const Body = z.object({
 });
 
 // Per visitor, per 10 minutes. Stops one person from using up the shared free quotas.
-const LIMITS: Record<PresetName, number> = { "felt-chat": 30, "felt-title": 20, "felt-music": 20 };
+const LIMITS: Record<PresetName, number> = { "felt-chat": 30, "felt-title": 20, "felt-music": 20, "felt-memory": 20 };
 const BUSY = "The AI is very busy right now. Please try again in a minute.";
 const DECLINED = "Sorry, I can't help with that one.";
 
